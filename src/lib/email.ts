@@ -1,6 +1,12 @@
-import { Resend } from "resend";
+import nodemailer from "nodemailer";
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const transporter = nodemailer.createTransport({
+  service: "gmail",
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD,
+  },
+});
 
 interface WelcomeEmailOptions {
   to: string;
@@ -35,13 +41,6 @@ export async function sendWelcomeEmail({
           <!-- Header -->
           <tr>
             <td align="center" style="padding-bottom:24px;">
-              <table cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="background-color:#2563eb;border-radius:12px;padding:12px;margin-bottom:12px;">
-                    <img src="https://api.iconify.design/lucide:bus.svg?color=white&width=32&height=32" width="32" height="32" alt="Bus" style="display:block;" />
-                  </td>
-                </tr>
-              </table>
               <p style="margin:12px 0 0;font-size:22px;font-weight:700;color:#111827;">DaycareRide</p>
               <p style="margin:4px 0 0;font-size:13px;color:#6b7280;">${orgName}</p>
             </td>
@@ -102,7 +101,7 @@ export async function sendWelcomeEmail({
               </table>
 
               <p style="margin:0;font-size:13px;color:#9ca3af;line-height:1.6;">
-                If you have questions, contact your transportation coordinator. Do not reply to this email.
+                If you have questions, contact your transportation coordinator.
               </p>
             </td>
           </tr>
@@ -135,8 +134,8 @@ IMPORTANT: Please change your password after your first login (My Profile → Ch
 
 If you have questions, contact your transportation coordinator.`;
 
-  return resend.emails.send({
-    from: process.env.RESEND_FROM_EMAIL ?? `DaycareRide <onboarding@resend.dev>`,
+  return transporter.sendMail({
+    from: `"DaycareRide" <${process.env.GMAIL_USER}>`,
     to,
     subject: `Welcome to ${orgName} — Your Driver Account`,
     html,
