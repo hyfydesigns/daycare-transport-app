@@ -1,0 +1,272 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  hashedPassword String
+  role           String   @default("OFFICE_STAFF") // ADMIN | OFFICE_STAFF | DRIVER
+  name           String
+  phone          String?
+  active         Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  driver    Driver?
+  auditLogs AuditLog[]
+}
+
+model Child {
+  id          String   @id @default(cuid())
+  fullName    String
+  photoUrl    String?
+  dateOfBirth String?
+  grade       String?
+
+  schoolId String
+  school   School @relation(fields: [schoolId], references: [id])
+
+  homeAddress String
+  homeLat     Float   @default(0)
+  homeLng     Float   @default(0)
+
+  guardianName     String
+  guardianPhone    String
+  guardianEmail    String
+  guardianRelation String @default("Parent")
+
+  emergencyName     String?
+  emergencyPhone    String?
+  emergencyRelation String?
+
+  specialInstructions String?
+  active              Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routeAssignments RouteChildAssignment[]
+  attendanceLogs   AttendanceLog[]
+  tripStopChildren TripStopChild[]
+}
+
+model School {
+  id            String  @id @default(cuid())
+  name          String
+  address       String
+  lat           Float   @default(0)
+  lng           Float   @default(0)
+  dismissalTime String  @default("15:15")
+  contactPerson String?
+  contactPhone  String?
+  active        Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  children Child[]
+  stops    RouteStop[]
+}
+
+model Vehicle {
+  id               String  @id @default(cuid())
+  identifier       String  @unique
+  make             String
+  model            String
+  year             Int
+  licensePlate     String  @unique
+  capacity         Int
+  status           String  @default("ACTIVE") // ACTIVE | IN_USE | MAINTENANCE | RETIRED
+  mileage          Int?
+  insuranceExpiry  String?
+  maintenanceNotes String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routes Route[]
+  trips  Trip[]
+}
+
+model Driver {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id])
+
+  photoUrl              String?
+  licenseNumber         String
+  licenseExpiry         String
+  certifications        String  @default("[]") // JSON array stored as string for SQLite
+  backgroundCheckStatus String  @default("PENDING") // PENDING | CLEARED | FAILED | EXPIRED
+  backgroundCheckDate   String?
+  active                Boolean @default(true)
+  notes                 String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  routes    Route[]
+  trips     Trip[]
+  locations DriverLocation[]
+}
+
+model Route {
+  id         String  @id @default(cuid())
+  code       String  @unique
+  name       String
+  active     Boolean @default(true)
+  activeDays String  @default("MON,TUE,WED,THU,FRI")
+
+  driverId  String?
+  driver    Driver?  @relation(fields: [driverId], references: [id])
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stops            RouteStop[]
+  childAssignments RouteChildAssignment[]
+  trips            Trip[]
+}
+
+model RouteStop {
+  id       String @id @default(cuid())
+  routeId  String
+  route    Route  @relation(fields: [routeId], references: [id])
+  sequence Int
+  type     String // PICKUP | DROPOFF
+
+  schoolId String?
+  school   School? @relation(fields: [schoolId], references: [id])
+
+  address       String
+  lat           Float  @default(0)
+  lng           Float  @default(0)
+  estimatedTime String?
+  childrenIds   String @default("[]") // JSON array of childIds
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tripStops TripStop[]
+}
+
+model RouteChildAssignment {
+  id        String   @id @default(cuid())
+  childId   String
+  child     Child    @relation(fields: [childId], references: [id])
+  routeId   String
+  route     Route    @relation(fields: [routeId], references: [id])
+  active    Boolean  @default(true)
+  startDate DateTime @default(now())
+  endDate   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([childId, routeId])
+}
+
+model Trip {
+  id        String @id @default(cuid())
+  date      String // stored as YYYY-MM-DD
+  routeId   String
+  route     Route  @relation(fields: [routeId], references: [id])
+  driverId  String
+  driver    Driver @relation(fields: [driverId], references: [id])
+  vehicleId String
+  vehicle   Vehicle @relation(fields: [vehicleId], references: [id])
+  status    String  @default("SCHEDULED") // SCHEDULED | IN_PROGRESS | COMPLETED | DELAYED | CANCELLED
+
+  startedAt   String?
+  completedAt String?
+  notes       String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  stops          TripStop[]
+  attendanceLogs AttendanceLog[]
+
+  @@unique([date, routeId])
+}
+
+model TripStop {
+  id          String @id @default(cuid())
+  tripId      String
+  trip        Trip   @relation(fields: [tripId], references: [id])
+  routeStopId String
+  routeStop   RouteStop @relation(fields: [routeStopId], references: [id])
+  sequence    Int
+
+  arrivedAt  String?
+  departedAt String?
+  status     String? // COMPLETED | SKIPPED
+  notes      String?
+
+  children TripStopChild[]
+}
+
+model TripStopChild {
+  id         String   @id @default(cuid())
+  tripStopId String
+  tripStop   TripStop @relation(fields: [tripStopId], references: [id])
+  childId    String
+  child      Child    @relation(fields: [childId], references: [id])
+
+  pickedUpAt   String?
+  droppedOffAt String?
+  notes        String?
+}
+
+model AttendanceLog {
+  id      String @id @default(cuid())
+  childId String
+  child   Child  @relation(fields: [childId], references: [id])
+  date    String // YYYY-MM-DD
+  tripId  String?
+  trip    Trip?  @relation(fields: [tripId], references: [id])
+
+  status     String @default("TRANSPORTED") // TRANSPORTED | PARENT_PICKUP_EARLY | NO_SCHOOL | ABSENT | SICK | VACATION | OTHER
+  notes      String?
+  recordedBy String
+
+  actualPickupTime  String?
+  actualDropoffTime String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([childId, date])
+}
+
+model DriverLocation {
+  id        String  @id @default(cuid())
+  driverId  String
+  driver    Driver  @relation(fields: [driverId], references: [id])
+  lat       Float
+  lng       Float
+  heading   Float?
+  speed     Float?
+  timestamp DateTime @default(now())
+  tripId    String?
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  diff      String?  // JSON stored as string
+  ip        String?
+  createdAt DateTime @default(now())
+}
