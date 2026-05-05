@@ -56,16 +56,15 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
               <Label htmlFor="phone">Phone</Label>
               <Input id="phone" name="phone" defaultValue={driver?.phone} />
             </div>
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-2">
               <Label htmlFor="email">Email *</Label>
               <Input id="email" name="email" type="email" defaultValue={driver?.email} required={!driver} disabled={!!driver} />
+              {!driver && (
+                <p className="text-xs text-muted-foreground">
+                  A secure temporary password will be emailed to the driver automatically.
+                </p>
+              )}
             </div>
-            {!driver && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input id="password" name="password" type="password" placeholder="driver123" />
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="licenseNumber">License Number *</Label>
               <Input id="licenseNumber" name="licenseNumber" defaultValue={driver?.licenseNumber} required />
