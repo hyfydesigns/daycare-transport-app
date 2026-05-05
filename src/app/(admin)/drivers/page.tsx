@@ -5,6 +5,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Phone, AlertTriangle, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DriverFormDialog } from "./driver-form-dialog";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 
 export const dynamic = "force-dynamic";
 
@@ -89,7 +90,14 @@ export default async function DriversPage() {
                     }
                   </div>
                   {isAdmin && (
-                    <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
+                    <div className="flex items-center gap-1">
+                      <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
+                      <DeleteConfirmButton
+                        endpoint={`/api/drivers/${d.id}`}
+                        label={d.user.name}
+                        description="This will deactivate the driver and their login account."
+                      />
+                    </div>
                   )}
                 </div>
               </CardContent>
@@ -153,7 +161,14 @@ export default async function DriversPage() {
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-3 text-right">
-                      <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
+                      <div className="flex items-center justify-end gap-1">
+                        <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
+                        <DeleteConfirmButton
+                          endpoint={`/api/drivers/${d.id}`}
+                          label={d.user.name}
+                          description="This will deactivate the driver and their login account."
+                        />
+                      </div>
                     </td>
                   )}
                 </tr>

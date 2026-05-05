@@ -139,7 +139,11 @@ export default async function ChildrenPage({
                       <Button variant="ghost" size="sm">Edit</Button>
                     </Link>
                     {session?.user.role === "ADMIN" && (
-                      <ChildDeleteButton childId={child.id} childName={child.fullName} />
+                      <ChildDeleteButton
+                        endpoint={`/api/children/${child.id}`}
+                        label={child.fullName}
+                        description="This will deactivate the child's record. They will no longer appear in active routes."
+                      />
                     )}
                   </div>
                 </TableCell>

@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { School as SchoolIcon, MapPin, Phone, Users } from "lucide-react";
 import { SchoolFormDialog } from "./school-form-dialog";
+import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 
 export const dynamic = "force-dynamic";
 
@@ -59,8 +60,15 @@ export default async function SchoolsPage() {
               </div>
 
               {isAdmin && (
-                <div className="flex justify-end pt-1">
+                <div className="flex justify-end gap-1 pt-1">
                   <SchoolFormDialog school={s} />
+                  <DeleteConfirmButton
+                    endpoint={`/api/schools/${s.id}`}
+                    label={s.name}
+                    description={s._count.children > 0
+                      ? `This school has ${s._count.children} children enrolled. It will be deactivated but children will not be removed.`
+                      : "This will deactivate the school."}
+                  />
                 </div>
               )}
             </CardContent>
@@ -101,7 +109,16 @@ export default async function SchoolsPage() {
                 </td>
                 {isAdmin && (
                   <td className="px-4 py-3 text-right">
-                    <SchoolFormDialog school={s} />
+                    <div className="flex items-center justify-end gap-1">
+                      <SchoolFormDialog school={s} />
+                      <DeleteConfirmButton
+                        endpoint={`/api/schools/${s.id}`}
+                        label={s.name}
+                        description={s._count.children > 0
+                          ? `This school has ${s._count.children} children enrolled. It will be deactivated but children will not be removed.`
+                          : "This will deactivate the school."}
+                      />
+                    </div>
                   </td>
                 )}
               </tr>
