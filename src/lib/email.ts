@@ -24,6 +24,11 @@ export async function sendWelcomeEmail({
   orgName = "DaycareRide",
 }: WelcomeEmailOptions) {
   const firstName = driverName.split(" ")[0];
+  const safePassword = tempPassword
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -69,7 +74,7 @@ export async function sendWelcomeEmail({
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#6b7280;">Password</td>
                         <td style="padding:6px 0;">
-                          <code style="font-size:14px;font-weight:700;color:#2563eb;background-color:#eff6ff;padding:3px 8px;border-radius:5px;letter-spacing:0.05em;">${tempPassword}</code>
+                          <code style="font-size:14px;font-weight:700;color:#2563eb;background-color:#eff6ff;padding:3px 8px;border-radius:5px;letter-spacing:0.05em;">${safePassword}</code>
                         </td>
                       </tr>
                     </table>

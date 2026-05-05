@@ -11,7 +11,7 @@ function generateTempPassword(length = 12): string {
   const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
   const lower = "abcdefghjkmnpqrstuvwxyz";
   const digits = "23456789";
-  const special = "!@#$%&*";
+  const special = "!@#$%";
   const all = upper + lower + digits + special;
 
   const bytes = crypto.randomBytes(length + 4);
