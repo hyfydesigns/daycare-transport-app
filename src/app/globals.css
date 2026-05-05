@@ -33,3 +33,90 @@
   * { @apply border-border; }
   body { @apply bg-background text-foreground; }
 }
+
+/* ─── Print styles ─────────────────────────────────────────────────────────── */
+@media print {
+  /* Landscape 8.5 × 11 — printable area ≈ 10 × 7.6 in at 0.45/0.5 in margins */
+  @page {
+    size: 11in 8.5in;
+    margin: 0.45in 0.5in;
+  }
+
+  /* Preserve background colours (zebra rows, status badges, etc.) */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Kill shadows and transitions — they add nothing on paper */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Sidebar / topbar — hidden via print:hidden Tailwind class, but belt-and-suspenders */
+  aside { display: none !important; }
+
+  /* Allow the outer layout flex to collapse cleanly */
+  body, #__next, [data-nextjs-scroll-focus-boundary] {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Scroll containers must be visible so table renders fully */
+  .overflow-x-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
+
+  /* ── Report-specific print rules ─── */
+
+  /* Print header shown only on paper */
+  .report-print-header {
+    display: block !important;
+    margin-bottom: 10pt;
+  }
+
+  /* Compact summary row shown only on paper */
+  .report-print-summary {
+    display: flex !important;
+    gap: 24pt;
+    margin-bottom: 10pt;
+    font-size: 9pt;
+  }
+
+  /* The main report table */
+  .report-print-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 8pt !important;
+    table-layout: auto;
+  }
+
+  .report-print-table th {
+    background: #f1f5f9 !important;
+    font-weight: 600;
+    text-align: left;
+    padding: 4pt 5pt !important;
+    border-bottom: 1.5pt solid #cbd5e1 !important;
+    white-space: nowrap;
+  }
+
+  .report-print-table td {
+    padding: 3pt 5pt !important;
+    border-bottom: 0.5pt solid #e2e8f0 !important;
+    vertical-align: middle;
+  }
+
+  /* Zebra rows stay readable at 8pt */
+  .report-print-table tr:nth-child(even) td {
+    background: #f8fafc !important;
+  }
+
+  /* Keep each data row together — allow thead to repeat on every page */
+  .report-print-table thead { display: table-header-group; }
+  .report-print-table tr    { break-inside: avoid; }
+
+  /* Card borders are fine on print; remove rounded corners */
+  .rounded-xl, .rounded-lg, .rounded-md { border-radius: 0 !important; }
+}

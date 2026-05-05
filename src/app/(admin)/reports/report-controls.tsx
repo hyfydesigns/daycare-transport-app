@@ -1,7 +1,7 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Download } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Printer } from "lucide-react";
 import { ATTENDANCE_LABELS } from "@/lib/utils";
 
 interface ReportControlsProps {
@@ -69,6 +69,9 @@ export function ReportControls({ weekOffset, weekLabel, dates, dayLabels }: Repo
       </Button>
       <Button variant="outline" size="sm" onClick={exportCSV}>
         <Download className="h-4 w-4" /> Export CSV
+      </Button>
+      <Button variant="outline" size="sm" onClick={() => window.print()}>
+        <Printer className="h-4 w-4" /> Print
       </Button>
       {weekOffset !== 0 && (
         <Button variant="ghost" size="sm" onClick={() => router.push("/reports")}>

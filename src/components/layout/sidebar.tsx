@@ -89,12 +89,12 @@ export function Sidebar({ userName, userRole }: SidebarProps) {
   return (
     <>
       {/* Desktop sidebar */}
-      <aside className="hidden lg:flex flex-col w-60 shrink-0 border-r bg-card h-screen sticky top-0">
+      <aside className="hidden lg:flex print:hidden flex-col w-60 shrink-0 border-r bg-card h-screen sticky top-0">
         <NavContent />
       </aside>
 
       {/* Mobile top bar */}
-      <div className="lg:hidden flex items-center justify-between px-4 py-3 border-b bg-card sticky top-0 z-40">
+      <div className="lg:hidden print:hidden flex items-center justify-between px-4 py-3 border-b bg-card sticky top-0 z-40">
         <div className="flex items-center gap-2">
           <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center">
             <Bus className="h-4 w-4 text-white" />
