@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Bus, Users, MapPin, School } from "lucide-react";
 import Link from "next/link";
 import { RouteStopsManager } from "./route-stops-manager";
-import { RouteMap, type MapStop } from "@/components/map/route-map";
+import { RouteMap, type MapStop } from "@/components/map/map-lazy";
 
 export const dynamic = "force-dynamic";
 

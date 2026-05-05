@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, School, Home, AlertCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { DriverStopActions } from "./driver-stop-actions";
-import { RouteMap, type MapStop } from "@/components/map/route-map";
+import { RouteMap, type MapStop } from "@/components/map/map-lazy";
 
 export const dynamic = "force-dynamic";
 

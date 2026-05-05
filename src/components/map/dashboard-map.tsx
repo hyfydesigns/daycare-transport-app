@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import mapboxgl from "mapbox-gl";
-import "mapbox-gl/dist/mapbox-gl.css";
+// CSS is imported globally in globals.css
+
+export const ROUTE_COLORS = [
+  "#6366f1", // indigo
+  "#f59e0b", // amber
+  "#10b981", // emerald
+  "#ef4444", // red
+  "#8b5cf6", // violet
+  "#06b6d4", // cyan
+];
 
 export interface DashboardStop {
   lat: number;
@@ -20,26 +29,21 @@ interface DashboardMapProps {
   className?: string;
 }
 
-const ROUTE_COLORS = [
-  "#6366f1", // indigo
-  "#f59e0b", // amber
-  "#10b981", // emerald
-  "#ef4444", // red
-  "#8b5cf6", // violet
-  "#06b6d4", // cyan
-];
-
 export function DashboardMap({ stops, className = "" }: DashboardMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const markersRef = useRef<mapboxgl.Marker[]>([]);
   const [ready, setReady] = useState(false);
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (!token) return;
+    if (!token) {
+      setError(true);
+      return;
+    }
 
     mapboxgl.accessToken = token;
 
@@ -51,16 +55,27 @@ export function DashboardMap({ stops, className = "" }: DashboardMapProps) {
       ? validStops.reduce((s, p) => s + p.lat, 0) / validStops.length
       : 37.3382;
 
-    const map = new mapboxgl.Map({
-      container: containerRef.current,
-      style: "mapbox://styles/mapbox/light-v11",
-      center: [centerLng, centerLat],
-      zoom: 12,
-    });
+    let map: mapboxgl.Map;
+    try {
+      map = new mapboxgl.Map({
+        container: containerRef.current,
+        style: "mapbox://styles/mapbox/light-v11",
+        center: [centerLng, centerLat],
+        zoom: 12,
+        attributionControl: false,
+      });
+    } catch {
+      setError(true);
+      return;
+    }
 
-    map.addControl(new mapboxgl.NavigationControl(), "top-right");
+    map.addControl(new mapboxgl.AttributionControl({ compact: true }), "bottom-right");
+    map.addControl(new mapboxgl.NavigationControl({ showCompass: false }), "top-right");
 
     map.on("load", () => {
+      // Force canvas resize after DOM paint
+      map.resize();
+
       markersRef.current.forEach((m) => m.remove());
       markersRef.current = [];
 
@@ -70,33 +85,30 @@ export function DashboardMap({ stops, className = "" }: DashboardMapProps) {
 
         const el = document.createElement("div");
         el.style.cssText = `
-          width: ${isPickup ? "28px" : "22px"};
-          height: ${isPickup ? "28px" : "22px"};
-          background: ${color};
-          border: 2.5px solid white;
-          border-radius: ${isPickup ? "8px" : "50%"};
-          box-shadow: 0 2px 6px rgba(0,0,0,0.25);
-          cursor: pointer;
-          display: flex; align-items: center; justify-content: center;
+          width:${isPickup ? "28px" : "22px"};
+          height:${isPickup ? "28px" : "22px"};
+          background:${color};
+          border:2.5px solid white;
+          border-radius:${isPickup ? "8px" : "50%"};
+          box-shadow:0 2px 6px rgba(0,0,0,0.25);
+          cursor:pointer;
+          display:flex;align-items:center;justify-content:center;
         `;
-
-        // School icon (square) vs home icon (circle)
         const iconSvg = isPickup
           ? `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" fill="white" viewBox="0 0 24 24"><path d="M12 3L2 12h3v9h6v-6h2v6h6v-9h3L12 3z"/></svg>`
           : `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="white" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/></svg>`;
         el.innerHTML = iconSvg;
 
-        const popup = new mapboxgl.Popup({ offset: 18, closeButton: false })
-          .setHTML(`
-            <div style="font-family:system-ui;min-width:150px">
-              <div style="font-size:10px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">
-                ${stop.routeName} · ${stop.type}
-              </div>
-              <div style="font-weight:600;font-size:13px">${stop.label}</div>
-              <div style="font-size:11px;color:#6b7280;margin-top:1px">${stop.address}</div>
-              ${stop.estimatedTime ? `<div style="font-size:11px;color:#6b7280;margin-top:2px">ETA ${stop.estimatedTime}</div>` : ""}
+        const popup = new mapboxgl.Popup({ offset: 18, closeButton: false }).setHTML(`
+          <div style="font-family:system-ui;min-width:150px">
+            <div style="font-size:10px;font-weight:600;color:${color};text-transform:uppercase;letter-spacing:.05em;margin-bottom:3px">
+              ${stop.routeName} · ${stop.type}
             </div>
-          `);
+            <div style="font-weight:600;font-size:13px">${stop.label}</div>
+            <div style="font-size:11px;color:#6b7280;margin-top:1px">${stop.address}</div>
+            ${stop.estimatedTime ? `<div style="font-size:11px;color:#6b7280;margin-top:2px">ETA ${stop.estimatedTime}</div>` : ""}
+          </div>
+        `);
 
         const marker = new mapboxgl.Marker({ element: el })
           .setLngLat([stop.lng, stop.lat])
@@ -120,6 +132,8 @@ export function DashboardMap({ stops, className = "" }: DashboardMapProps) {
       setReady(true);
     });
 
+    map.on("error", () => setError(true));
+
     mapRef.current = map;
 
     return () => {
@@ -127,22 +141,28 @@ export function DashboardMap({ stops, className = "" }: DashboardMapProps) {
       map.remove();
       mapRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  if (error) return null;
 
   return (
     <div
-      className={`relative rounded-xl overflow-hidden border ${className}`}
-      style={{ height: "360px" }}
+      className={`relative rounded-xl border ${className}`}
+      style={{ height: "360px", overflow: "hidden" }}
     >
-      <div ref={containerRef} className="absolute inset-0" />
+      <div
+        ref={containerRef}
+        style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0 }}
+      />
       {!ready && (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted/40">
+        <div
+          style={{ position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center" }}
+          className="bg-muted/40"
+        >
           <div className="text-sm text-muted-foreground animate-pulse">Loading map…</div>
         </div>
       )}
     </div>
   );
 }
-
-export { ROUTE_COLORS };

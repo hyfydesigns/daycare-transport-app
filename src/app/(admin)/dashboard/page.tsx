@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Users, Bus, Route, CalendarCheck, AlertTriangle, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
-import { DashboardMap, ROUTE_COLORS, type DashboardStop } from "@/components/map/dashboard-map";
+import { DashboardMap, ROUTE_COLORS, type DashboardStop } from "@/components/map/map-lazy";
 
 export const dynamic = "force-dynamic";
 
