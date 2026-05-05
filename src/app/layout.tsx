@@ -7,7 +7,7 @@ import { auth } from "@/lib/auth";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "DaycareTransApp — Transportation Management",
+  title: "DaycareRide — Transportation Management",
   description: "Daycare transportation management system",
 };
 

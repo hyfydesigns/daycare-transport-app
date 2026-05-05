@@ -18,7 +18,7 @@ export default async function DriverLayout({ children }: { children: React.React
               <Bus className="h-4 w-4 text-white" />
             </div>
             <div>
-              <p className="font-bold text-sm leading-none">DaycareTransApp</p>
+              <p className="font-bold text-sm leading-none">DaycareRide</p>
               <p className="text-xs text-muted-foreground">{session.user.name}</p>
             </div>
           </Link>

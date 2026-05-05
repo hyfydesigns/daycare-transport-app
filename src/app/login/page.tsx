@@ -40,7 +40,7 @@ export default function LoginPage() {
           <div className="h-14 w-14 rounded-2xl bg-primary flex items-center justify-center mb-4 shadow-lg">
             <Bus className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">DaycareTransApp</h1>
+          <h1 className="text-2xl font-bold text-gray-900">DaycareRide</h1>
           <p className="text-sm text-gray-500 mt-1">Transportation Management System</p>
         </div>
 

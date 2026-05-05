@@ -43,7 +43,7 @@ export function Sidebar({ userName, userRole, orgName }: SidebarProps) {
           <Bus className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
-          <p className="font-bold text-sm truncate">DaycareTransApp</p>
+          <p className="font-bold text-sm truncate">DaycareRide</p>
           <p className="text-xs text-muted-foreground truncate">{orgName}</p>
         </div>
       </div>
@@ -135,7 +135,7 @@ export function Sidebar({ userName, userRole, orgName }: SidebarProps) {
           <div className="h-7 w-7 rounded-md bg-primary flex items-center justify-center">
             <Bus className="h-4 w-4 text-white" />
           </div>
-          <span className="font-bold text-sm">DaycareTransApp</span>
+          <span className="font-bold text-sm">DaycareRide</span>
         </div>
         <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)}>
           <Menu className="h-5 w-5" />
