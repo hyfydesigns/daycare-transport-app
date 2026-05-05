@@ -35,6 +35,12 @@ function generateTempPassword(length = 12): string {
   return arr.join("");
 }
 
+function getLoginUrl(): string {
+  if (process.env.NEXTAUTH_URL) return `${process.env.NEXTAUTH_URL}/login`;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}/login`;
+  return "http://localhost:3000/login";
+}
+
 export async function GET() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -73,25 +79,19 @@ export async function POST(req: NextRequest) {
     include: { user: true },
   });
 
-  // Send welcome email (non-blocking — don't fail driver creation if email fails)
+  // Send welcome email — log result so it's visible in Vercel logs
+  let emailError: string | null = null;
   try {
     const orgName = await getSetting("orgName", "Sunshine Daycare");
-    const loginUrl =
-      process.env.NEXTAUTH_URL ??
-      process.env.VERCEL_URL
-        ? `https://${process.env.VERCEL_URL}/login`
-        : "http://localhost:3000/login";
+    const loginUrl = getLoginUrl();
 
-    await sendWelcomeEmail({
-      to: email,
-      driverName: name,
-      tempPassword,
-      loginUrl,
-      orgName,
-    });
+    console.log(`[welcome-email] Sending to ${email} via ${loginUrl}`);
+    const result = await sendWelcomeEmail({ to: email, driverName: name, tempPassword, loginUrl, orgName });
+    console.log("[welcome-email] Resend response:", JSON.stringify(result));
   } catch (err) {
-    console.error("[welcome-email] Failed to send:", err);
+    emailError = err instanceof Error ? err.message : String(err);
+    console.error("[welcome-email] Failed to send:", emailError);
   }
 
-  return NextResponse.json(driver, { status: 201 });
+  return NextResponse.json({ ...driver, emailError }, { status: 201 });
 }
