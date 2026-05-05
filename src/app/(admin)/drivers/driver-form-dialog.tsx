@@ -15,6 +15,7 @@ interface Driver {
 export function DriverFormDialog({ driver }: { driver?: Driver }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
   const router = useRouter();
@@ -22,6 +23,7 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
+    setFormError(null);
     setEmailError(null);
     setEmailSent(false);
 
@@ -36,12 +38,17 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
 
     setLoading(false);
 
+    // Server-side error (e.g. duplicate email)
+    if (!res.ok) {
+      setFormError(json?.error ?? `Unexpected error (${res.status})`);
+      return;
+    }
+
     if (!driver) {
-      // Show email status before closing
       if (json.emailError) {
         setEmailError(json.emailError);
         router.refresh();
-        return; // Stay open so admin sees the error
+        return;
       } else {
         setEmailSent(true);
         setTimeout(() => { setOpen(false); setEmailSent(false); router.refresh(); }, 2000);
@@ -54,7 +61,7 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setEmailError(null); setEmailSent(false); }}>
+    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setFormError(null); setEmailError(null); setEmailSent(false); }}>
       <DialogTrigger asChild>
         {driver ? (
           <Button variant="ghost" size="sm"><Pencil className="h-4 w-4" /></Button>
@@ -66,6 +73,13 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
         <DialogHeader>
           <DialogTitle>{driver ? "Edit Driver" : "Add Driver"}</DialogTitle>
         </DialogHeader>
+
+        {formError && (
+          <div className="flex items-start gap-2 text-sm text-red-700 bg-red-50 border border-red-200 px-3 py-2 rounded-md">
+            <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+            <span>{formError}</span>
+          </div>
+        )}
 
         {emailSent && (
           <div className="flex items-center gap-2 text-sm text-green-700 bg-green-50 border border-green-200 px-3 py-2 rounded-md">

@@ -63,6 +63,15 @@ export async function POST(req: NextRequest) {
   const tempPassword = generateTempPassword();
   const hashedPassword = await bcrypt.hash(tempPassword, 10);
 
+  // Check if email already exists (including deactivated accounts)
+  const existing = await prisma.user.findUnique({ where: { email } });
+  if (existing) {
+    return NextResponse.json(
+      { error: `A driver account with this email already exists${!existing.active ? " (deactivated)" : ""}.` },
+      { status: 409 }
+    );
+  }
+
   const user = await prisma.user.create({
     data: { name, email, hashedPassword, role: "DRIVER", phone },
   });
