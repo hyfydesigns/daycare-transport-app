@@ -5,44 +5,51 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   Bus, LayoutDashboard, Users, School, Truck, Route,
-  CalendarCheck, FileBarChart, LogOut, Menu, X
+  CalendarCheck, FileBarChart, LogOut, Menu, X, Settings, UserCircle,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/children", label: "Children", icon: Users },
-  { href: "/schools", label: "Schools", icon: School },
-  { href: "/drivers", label: "Drivers", icon: Users },
-  { href: "/vehicles", label: "Vehicles", icon: Truck },
-  { href: "/routes", label: "Routes", icon: Route },
+  { href: "/dashboard",  label: "Dashboard",  icon: LayoutDashboard },
+  { href: "/children",   label: "Children",   icon: Users },
+  { href: "/schools",    label: "Schools",    icon: School },
+  { href: "/drivers",    label: "Drivers",    icon: Users },
+  { href: "/vehicles",   label: "Vehicles",   icon: Truck },
+  { href: "/routes",     label: "Routes",     icon: Route },
   { href: "/attendance", label: "Attendance", icon: CalendarCheck },
-  { href: "/reports", label: "Reports", icon: FileBarChart },
+  { href: "/reports",    label: "Reports",    icon: FileBarChart },
 ];
 
 interface SidebarProps {
   userName: string;
   userRole: string;
+  orgName: string;
 }
 
-export function Sidebar({ userName, userRole }: SidebarProps) {
+export function Sidebar({ userName, userRole, orgName }: SidebarProps) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const isAdmin = userRole === "ADMIN";
+
+  const isActive = (href: string) =>
+    href === "/dashboard" ? pathname === href : pathname.startsWith(href);
 
   const NavContent = () => (
     <>
+      {/* Logo / org name */}
       <div className="flex items-center gap-3 px-4 py-5 border-b">
         <div className="h-9 w-9 rounded-lg bg-primary flex items-center justify-center shrink-0">
           <Bus className="h-5 w-5 text-white" />
         </div>
         <div className="min-w-0">
           <p className="font-bold text-sm truncate">DaycareTransApp</p>
-          <p className="text-xs text-muted-foreground truncate">Sunshine Daycare</p>
+          <p className="text-xs text-muted-foreground truncate">{orgName}</p>
         </div>
       </div>
 
-      <nav className="flex-1 px-3 py-4 space-y-1">
+      {/* Main nav */}
+      <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
         {navItems.map(({ href, label, icon: Icon }) => (
           <Link
             key={href}
@@ -50,9 +57,7 @@ export function Sidebar({ userName, userRole }: SidebarProps) {
             onClick={() => setMobileOpen(false)}
             className={cn(
               "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
-              pathname.startsWith(href) && href !== "/dashboard"
-                ? "bg-primary text-primary-foreground"
-                : pathname === href && href === "/dashboard"
+              isActive(href)
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
@@ -61,10 +66,37 @@ export function Sidebar({ userName, userRole }: SidebarProps) {
             {label}
           </Link>
         ))}
+
+        {/* Admin-only settings */}
+        {isAdmin && (
+          <Link
+            href="/settings"
+            onClick={() => setMobileOpen(false)}
+            className={cn(
+              "flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors",
+              isActive("/settings")
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+            )}
+          >
+            <Settings className="h-4 w-4 shrink-0" />
+            Settings
+          </Link>
+        )}
       </nav>
 
+      {/* User profile + sign-out */}
       <div className="px-3 py-4 border-t">
-        <div className="flex items-center gap-3 px-3 py-2 mb-2">
+        <Link
+          href="/profile"
+          onClick={() => setMobileOpen(false)}
+          className={cn(
+            "flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors",
+            isActive("/profile")
+              ? "bg-primary text-primary-foreground"
+              : "hover:bg-accent"
+          )}
+        >
           <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
             <span className="text-xs font-bold text-primary">
               {userName.charAt(0).toUpperCase()}
@@ -72,9 +104,13 @@ export function Sidebar({ userName, userRole }: SidebarProps) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium truncate">{userName}</p>
-            <p className="text-xs text-muted-foreground capitalize">{userRole.replace("_", " ").toLowerCase()}</p>
+            <p className="text-xs text-muted-foreground capitalize">
+              {userRole.replace("_", " ").toLowerCase()}
+            </p>
           </div>
-        </div>
+          <UserCircle className="h-4 w-4 text-muted-foreground shrink-0" />
+        </Link>
+
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
           className="flex w-full items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
@@ -111,10 +147,7 @@ export function Sidebar({ userName, userRole }: SidebarProps) {
         <div className="lg:hidden fixed inset-0 z-50 flex">
           <div className="fixed inset-0 bg-black/50" onClick={() => setMobileOpen(false)} />
           <aside className="relative flex flex-col w-72 bg-card h-full shadow-xl">
-            <button
-              className="absolute right-4 top-4"
-              onClick={() => setMobileOpen(false)}
-            >
+            <button className="absolute right-4 top-4" onClick={() => setMobileOpen(false)}>
               <X className="h-5 w-5" />
             </button>
             <NavContent />

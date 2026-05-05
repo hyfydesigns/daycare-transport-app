@@ -532,6 +532,13 @@ async function main() {
     }
   }
 
+  // Default settings
+  await prisma.setting.upsert({
+    where: { key: "orgName" },
+    update: {},
+    create: { key: "orgName", value: "Sunshine Daycare" },
+  });
+
   console.log("✅ Seed complete!");
   console.log("Login credentials:");
   console.log("  Admin:  admin@sunshinedc.com / admin123");
