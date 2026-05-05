@@ -10,9 +10,15 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
   const driver = await prisma.driver.findUnique({ where: { id } });
   if (!driver) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Deactivate driver and their user account
+  // Deactivate driver and their user account, freeing the email for reuse
   await prisma.driver.update({ where: { id }, data: { active: false } });
-  await prisma.user.update({ where: { id: driver.userId }, data: { active: false } });
+  await prisma.user.update({
+    where: { id: driver.userId },
+    data: {
+      active: false,
+      email: `deleted_${id}_${Date.now()}@removed.invalid`,
+    },
+  });
 
   return NextResponse.json({ success: true });
 }
