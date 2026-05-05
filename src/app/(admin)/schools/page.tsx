@@ -11,6 +11,7 @@ export const dynamic = "force-dynamic";
 export default async function SchoolsPage() {
   const session = await auth();
   const schools = await prisma.school.findMany({
+    where: { active: true },
     orderBy: { name: "asc" },
     include: { _count: { select: { children: true } } },
   });

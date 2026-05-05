@@ -19,6 +19,7 @@ const bgColors: Record<string, string> = {
 export default async function DriversPage() {
   const session = await auth();
   const drivers = await prisma.driver.findMany({
+    where: { active: true },
     include: {
       user: true,
       routes: { where: { active: true }, include: { vehicle: true } },
