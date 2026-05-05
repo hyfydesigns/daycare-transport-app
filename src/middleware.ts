@@ -1,5 +1,12 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 import { NextResponse } from "next/server";
+
+// Use the edge-safe config (no bcrypt/Prisma) for middleware
+const { auth } = NextAuth({
+  ...authConfig,
+  secret: process.env.NEXTAUTH_SECRET ?? process.env.AUTH_SECRET,
+});
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
@@ -16,7 +23,11 @@ export default auth((req) => {
 
   // Driver can only access driver routes
   const role = req.auth?.user?.role;
-  if (role === "DRIVER" && !pathname.startsWith("/driver") && !pathname.startsWith("/api")) {
+  if (
+    role === "DRIVER" &&
+    !pathname.startsWith("/driver") &&
+    !pathname.startsWith("/api")
+  ) {
     return NextResponse.redirect(new URL("/driver", req.url));
   }
 
