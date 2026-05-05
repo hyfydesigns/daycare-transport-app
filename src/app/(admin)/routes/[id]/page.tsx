@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Bus, Users, MapPin, School } from "lucide-react";
 import Link from "next/link";
 import { RouteStopsManager } from "./route-stops-manager";
+import { RouteMap, type MapStop } from "@/components/map/route-map";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +39,26 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
 
   const isAdmin = session?.user.role === "ADMIN";
 
+  // Build MapStop objects for the map component
+  const mapStops: MapStop[] = route.stops.map((stop) => {
+    const childIds: string[] = JSON.parse(stop.childrenIds || "[]");
+    const childNames = route.childAssignments
+      .filter((a) => childIds.includes(a.child.id))
+      .map((a) => a.child.fullName);
+
+    return {
+      id: stop.id,
+      sequence: stop.sequence,
+      type: stop.type as "PICKUP" | "DROPOFF",
+      lat: stop.lat,
+      lng: stop.lng,
+      label: stop.school?.name ?? stop.address,
+      address: stop.address,
+      estimatedTime: stop.estimatedTime,
+      children: childNames,
+    };
+  });
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center gap-4">
@@ -51,6 +72,7 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
         <Badge variant={route.active ? "success" : "secondary"}>{route.active ? "Active" : "Inactive"}</Badge>
       </div>
 
+      {/* Info cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-4">
@@ -87,14 +109,23 @@ export default async function RouteDetailPage({ params }: { params: Promise<{ id
         </Card>
       </div>
 
+      {/* Map — full width */}
+      {mapStops.length > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-3">
+            <MapPin className="h-5 w-5" /> Route Map
+          </h2>
+          <RouteMap stops={mapStops} height="420px" />
+        </div>
+      )}
+
+      {/* Stops list + Children side-by-side */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Stops list */}
         <div>
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold flex items-center gap-2">
-              <MapPin className="h-5 w-5" /> Stops ({route.stops.length})
-            </h2>
-          </div>
+          <h2 className="text-lg font-semibold flex items-center gap-2 mb-4">
+            <MapPin className="h-5 w-5" /> Stops ({route.stops.length})
+          </h2>
           <div className="space-y-2">
             {route.stops.map((stop, idx) => {
               const childIds: string[] = JSON.parse(stop.childrenIds || "[]");

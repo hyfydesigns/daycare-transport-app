@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, School, Home, AlertCircle, Clock } from "lucide-react";
 import Link from "next/link";
 import { DriverStopActions } from "./driver-stop-actions";
+import { RouteMap, type MapStop } from "@/components/map/route-map";
 
 export const dynamic = "force-dynamic";
 
@@ -40,6 +41,27 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
 
   const exceptionMap = new Map(todayAttendance.map((l) => [l.childId, l]));
 
+  // Build map stops for this route
+  const mapStops: MapStop[] = route.stops
+    .filter((s) => s.lat !== 0 && s.lng !== 0)
+    .map((stop) => {
+      const childIds: string[] = JSON.parse(stop.childrenIds || "[]");
+      const childNames = route.childAssignments
+        .filter((a) => childIds.includes(a.child.id))
+        .map((a) => a.child.fullName);
+      return {
+        id: stop.id,
+        sequence: stop.sequence,
+        type: stop.type as "PICKUP" | "DROPOFF",
+        lat: stop.lat,
+        lng: stop.lng,
+        label: stop.school?.name ?? stop.address,
+        address: stop.address,
+        estimatedTime: stop.estimatedTime,
+        children: childNames,
+      };
+    });
+
   return (
     <div className="p-4 space-y-4">
       <div className="flex items-center gap-3">
@@ -51,6 +73,11 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
           <p className="text-sm text-muted-foreground">{route.vehicle?.identifier} · {route.stops.length} stops</p>
         </div>
       </div>
+
+      {/* Route map — compact strip */}
+      {mapStops.length > 0 && (
+        <RouteMap stops={mapStops} height="220px" />
+      )}
 
       {/* Stops */}
       <div className="space-y-3">
