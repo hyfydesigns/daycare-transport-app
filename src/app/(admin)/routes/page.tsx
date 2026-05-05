@@ -27,11 +27,11 @@ export default async function RoutesPage() {
   const isAdmin = session?.user.role === "ADMIN";
 
   return (
-    <div className="p-6 space-y-6">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Route className="h-6 w-6" /> Routes
+          <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <Route className="h-5 w-5 md:h-6 md:w-6" /> Routes
           </h1>
           <p className="text-muted-foreground text-sm mt-1">{routes.length} routes configured</p>
         </div>

@@ -38,11 +38,11 @@ export default async function ChildrenPage({
   const schools = await prisma.school.findMany({ where: { active: true }, orderBy: { name: "asc" } });
 
   return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Users className="h-6 w-6" /> Children
+          <h1 className="text-xl md:text-2xl font-bold flex items-center gap-2">
+            <Users className="h-5 w-5 md:h-6 md:w-6" /> Children
           </h1>
           <p className="text-muted-foreground text-sm mt-1">{children.length} records</p>
         </div>
@@ -57,17 +57,17 @@ export default async function ChildrenPage({
       </div>
 
       {/* Filters */}
-      <form className="flex flex-wrap gap-3">
+      <form className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
         <input
           name="search"
           defaultValue={search}
           placeholder="Search by name…"
-          className="h-9 rounded-md border border-input px-3 py-1 text-sm w-48"
+          className="h-9 rounded-md border border-input px-3 py-1 text-sm w-full sm:w-48"
         />
         <select
           name="schoolId"
           defaultValue={params.schoolId || ""}
-          className="h-9 rounded-md border border-input px-3 py-1 text-sm"
+          className="h-9 rounded-md border border-input px-3 py-1 text-sm w-full sm:w-auto"
         >
           <option value="">All schools</option>
           {schools.map((s) => (
@@ -77,16 +77,16 @@ export default async function ChildrenPage({
         <select
           name="active"
           defaultValue={params.active || "true"}
-          className="h-9 rounded-md border border-input px-3 py-1 text-sm"
+          className="h-9 rounded-md border border-input px-3 py-1 text-sm w-full sm:w-auto"
         >
           <option value="true">Active</option>
           <option value="false">Inactive</option>
           <option value="">All</option>
         </select>
-        <Button type="submit" variant="outline" size="sm">Filter</Button>
+        <Button type="submit" variant="outline" size="sm" className="w-full sm:w-auto">Filter</Button>
       </form>
 
-      <div className="rounded-xl border overflow-hidden">
+      <div className="rounded-xl border overflow-x-auto">
         <Table>
           <TableHeader>
             <TableRow>
