@@ -5,7 +5,7 @@ import { todayStr } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bus, MapPin, Users, AlertCircle, Clock, ChevronRight } from "lucide-react";
+import { Bus, MapPin, Users, AlertCircle, Clock, ChevronRight, School } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -33,6 +33,10 @@ export default async function DriverHomePage() {
             include: { child: { include: { school: true } } },
           },
         },
+      },
+      schoolAssignments: {
+        where: { active: true },
+        include: { school: true, vehicle: true },
       },
     },
   });
@@ -73,11 +77,11 @@ export default async function DriverHomePage() {
         </p>
       </div>
 
-      {driver.routes.length === 0 ? (
+      {driver.routes.length === 0 && driver.schoolAssignments.length === 0 ? (
         <Card>
           <CardContent className="pt-6 text-center">
             <Bus className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">No routes assigned for today.</p>
+            <p className="text-muted-foreground">No routes or schools assigned.</p>
             <p className="text-sm text-muted-foreground">Contact your admin if this is unexpected.</p>
           </CardContent>
         </Card>
@@ -160,6 +164,44 @@ export default async function DriverHomePage() {
             </div>
           );
         })
+      )}
+
+      {/* Direct school assignments */}
+      {driver.schoolAssignments.length > 0 && (
+        <div className="space-y-3">
+          <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+            School Assignments
+          </h2>
+          {driver.schoolAssignments.map((a) => (
+            <Card key={a.id} className="border-blue-200 bg-blue-50/50">
+              <CardContent className="pt-4 space-y-2">
+                <div className="flex items-start gap-3">
+                  <div className="h-9 w-9 rounded-lg bg-blue-100 flex items-center justify-center shrink-0">
+                    <School className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-blue-900">{a.school.name}</p>
+                    <p className="text-xs text-blue-700 mt-0.5">{a.school.address}</p>
+                    {a.vehicle && (
+                      <div className="flex items-center gap-1 text-xs text-blue-700 mt-1">
+                        <Bus className="h-3 w-3" /> Vehicle: {a.vehicle.identifier}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1 text-xs text-blue-700 mt-0.5">
+                      <Clock className="h-3 w-3" /> Dismissal: {a.school.dismissalTime}
+                    </div>
+                    {a.notes && (
+                      <div className="flex items-start gap-1 text-xs text-blue-800 bg-blue-100 rounded p-2 mt-2">
+                        <AlertCircle className="h-3 w-3 shrink-0 mt-0.5" />
+                        {a.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -5,8 +5,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")   // Transaction Pooler URL (runtime / Vercel)
-  directUrl = env("DIRECT_URL")     // Direct connection URL (prisma db push / migrations)
+  url       = env("DATABASE_URL")  // Transaction Pooler URL (runtime + Vercel)
+  directUrl = env("DIRECT_URL")    // Direct URL locally; set equal to DATABASE_URL in Vercel
 }
 
 model User {
@@ -72,8 +72,23 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  children Child[]
-  stops    RouteStop[]
+  children          Child[]
+  stops             RouteStop[]
+  driverAssignments DriverSchoolAssignment[]
+}
+
+model DriverSchoolAssignment {
+  id        String   @id @default(cuid())
+  driverId  String
+  driver    Driver   @relation(fields: [driverId], references: [id])
+  schoolId  String
+  school    School   @relation(fields: [schoolId], references: [id])
+  vehicleId String?
+  vehicle   Vehicle? @relation(fields: [vehicleId], references: [id])
+  notes     String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Vehicle {
@@ -92,8 +107,9 @@ model Vehicle {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  routes Route[]
-  trips  Trip[]
+  routes            Route[]
+  trips             Trip[]
+  driverAssignments DriverSchoolAssignment[]
 }
 
 model Driver {
@@ -113,9 +129,10 @@ model Driver {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  routes    Route[]
-  trips     Trip[]
-  locations DriverLocation[]
+  routes            Route[]
+  trips             Trip[]
+  locations         DriverLocation[]
+  schoolAssignments DriverSchoolAssignment[]
 }
 
 model Route {

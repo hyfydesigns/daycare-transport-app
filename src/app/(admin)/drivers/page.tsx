@@ -2,9 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { auth } from "@/lib/auth";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Phone, AlertTriangle, Mail } from "lucide-react";
+import { Users, Phone, AlertTriangle, Mail, School } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DriverFormDialog } from "./driver-form-dialog";
+import { AssignSchoolDialog } from "./assign-school-dialog";
 import { DeleteConfirmButton } from "@/components/ui/delete-confirm-button";
 
 export const dynamic = "force-dynamic";
@@ -18,14 +19,22 @@ const bgColors: Record<string, string> = {
 
 export default async function DriversPage() {
   const session = await auth();
-  const drivers = await prisma.driver.findMany({
-    where: { active: true },
-    include: {
-      user: true,
-      routes: { where: { active: true }, include: { vehicle: true } },
-    },
-    orderBy: { user: { name: "asc" } },
-  });
+  const [drivers, schools, vehicles] = await Promise.all([
+    prisma.driver.findMany({
+      where: { active: true },
+      include: {
+        user: true,
+        routes: { where: { active: true }, include: { vehicle: true } },
+        schoolAssignments: {
+          where: { active: true },
+          include: { school: true, vehicle: true },
+        },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.school.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
+    prisma.vehicle.findMany({ where: { status: { not: "RETIRED" } }, orderBy: { identifier: "asc" } }),
+  ]);
   const isAdmin = session?.user.role === "ADMIN";
 
   return (
@@ -83,14 +92,49 @@ export default async function DriversPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
+                {/* Routes */}
+                <div className="space-y-1">
+                  <p className="text-xs text-muted-foreground font-medium">Routes</p>
                   <div className="flex flex-wrap gap-1">
                     {d.routes.length > 0
                       ? d.routes.map((r) => <Badge key={r.id} variant="secondary" className="text-xs">{r.name}</Badge>)
                       : <span className="text-xs text-muted-foreground">No route assigned</span>
                     }
                   </div>
-                  {isAdmin && (
+                </div>
+
+                {/* Direct school assignments */}
+                {d.schoolAssignments.length > 0 && (
+                  <div className="space-y-1">
+                    <p className="text-xs text-muted-foreground font-medium">Direct School Assignments</p>
+                    <div className="flex flex-wrap gap-1">
+                      {d.schoolAssignments.map((a) => (
+                        <div key={a.id} className="flex items-center gap-1">
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <School className="h-3 w-3" /> {a.school.name}
+                            {a.vehicle && <span className="text-muted-foreground">· {a.vehicle.identifier}</span>}
+                          </Badge>
+                          {isAdmin && (
+                            <DeleteConfirmButton
+                              endpoint={`/api/driver-school-assignments/${a.id}`}
+                              label={`${a.school.name} assignment`}
+                              description="Remove this school assignment from the driver."
+                            />
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {isAdmin && (
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <AssignSchoolDialog
+                      driverId={d.id}
+                      driverName={d.user.name}
+                      schools={schools}
+                      vehicles={vehicles}
+                    />
                     <div className="flex items-center gap-1">
                       <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
                       <DeleteConfirmButton
@@ -99,8 +143,8 @@ export default async function DriversPage() {
                         description="This will deactivate the driver and their login account."
                       />
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           );
@@ -120,7 +164,7 @@ export default async function DriversPage() {
               <th className="text-left px-4 py-3 font-semibold">License</th>
               <th className="text-left px-4 py-3 font-semibold">Expiry</th>
               <th className="text-left px-4 py-3 font-semibold">Background</th>
-              <th className="text-left px-4 py-3 font-semibold">Route</th>
+              <th className="text-left px-4 py-3 font-semibold">Routes & Schools</th>
               <th className="text-left px-4 py-3 font-semibold">Status</th>
               {isAdmin && <th className="text-right px-4 py-3 font-semibold">Actions</th>}
             </tr>
@@ -152,17 +196,41 @@ export default async function DriversPage() {
                     </span>
                   </td>
                   <td className="px-4 py-3">
-                    {d.routes.length > 0
-                      ? <div className="flex flex-wrap gap-1">{d.routes.map((r) => <Badge key={r.id} variant="secondary" className="text-xs">{r.name}</Badge>)}</div>
-                      : <span className="text-xs text-muted-foreground">Unassigned</span>
-                    }
+                    <div className="flex flex-wrap gap-1">
+                      {d.routes.map((r) => (
+                        <Badge key={r.id} variant="secondary" className="text-xs">{r.name}</Badge>
+                      ))}
+                      {d.schoolAssignments.map((a) => (
+                        <div key={a.id} className="flex items-center gap-0.5">
+                          <Badge variant="outline" className="text-xs gap-1">
+                            <School className="h-3 w-3" /> {a.school.name}
+                          </Badge>
+                          {isAdmin && (
+                            <DeleteConfirmButton
+                              endpoint={`/api/driver-school-assignments/${a.id}`}
+                              label={`${a.school.name} assignment`}
+                              description="Remove this school assignment from the driver."
+                            />
+                          )}
+                        </div>
+                      ))}
+                      {d.routes.length === 0 && d.schoolAssignments.length === 0 && (
+                        <span className="text-xs text-muted-foreground">Unassigned</span>
+                      )}
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant={d.active ? "success" : "secondary"}>{d.active ? "Active" : "Inactive"}</Badge>
                   </td>
                   {isAdmin && (
                     <td className="px-4 py-3 text-right">
-                      <div className="flex items-center justify-end gap-1">
+                      <div className="flex items-center justify-end gap-1 flex-wrap">
+                        <AssignSchoolDialog
+                          driverId={d.id}
+                          driverName={d.user.name}
+                          schools={schools}
+                          vehicles={vehicles}
+                        />
                         <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
                         <DeleteConfirmButton
                           endpoint={`/api/drivers/${d.id}`}
