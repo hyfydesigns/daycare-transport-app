@@ -27,12 +27,30 @@ export async function POST(req: NextRequest) {
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { childId, date, status, notes, actualPickupTime, actualDropoffTime } = body;
+  const { childId, date, status, notes, actualPickupTime, actualDropoffTime, dropoffLocation } = body;
+
+  // Only include defined fields in the update so partial updates (e.g. toggling
+  // dropoffLocation alone) don't accidentally overwrite status or times.
+  const updateData: Record<string, unknown> = { recordedBy: session.user.id };
+  if (status !== undefined) updateData.status = status;
+  if (notes !== undefined) updateData.notes = notes;
+  if (actualPickupTime !== undefined) updateData.actualPickupTime = actualPickupTime;
+  if (actualDropoffTime !== undefined) updateData.actualDropoffTime = actualDropoffTime;
+  if (dropoffLocation !== undefined) updateData.dropoffLocation = dropoffLocation;
 
   const log = await prisma.attendanceLog.upsert({
     where: { childId_date: { childId, date } },
-    update: { status, notes, actualPickupTime, actualDropoffTime, recordedBy: session.user.id },
-    create: { childId, date, status, notes, actualPickupTime, actualDropoffTime, recordedBy: session.user.id },
+    update: updateData,
+    create: {
+      childId,
+      date,
+      status: status ?? "", // "" = preference recorded but not yet transported
+      notes,
+      actualPickupTime,
+      actualDropoffTime,
+      dropoffLocation,
+      recordedBy: session.user.id,
+    },
   });
 
   return NextResponse.json(log, { status: 201 });

@@ -28,6 +28,7 @@ interface ChildFormProps {
     emergencyPhone: string;
     emergencyRelation: string;
     specialInstructions: string;
+    defaultDropoff: string;
     routeId: string;
   }>;
 }
@@ -196,6 +197,21 @@ export function ChildForm({ schools, routes, defaultValues }: ChildFormProps) {
                 <option key={r.id} value={r.id}>{r.name} ({r.code})</option>
               ))}
             </select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="defaultDropoff">Default Drop-off Location</Label>
+            <select
+              id="defaultDropoff"
+              name="defaultDropoff"
+              defaultValue={defaultValues?.defaultDropoff || "HOME"}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            >
+              <option value="HOME">Home (child's home address)</option>
+              <option value="DAYCARE">Daycare</option>
+            </select>
+            <p className="text-xs text-muted-foreground">
+              Driver can override this per day from the route view.
+            </p>
           </div>
           <div className="space-y-2">
             <Label htmlFor="specialInstructions">Special Instructions</Label>

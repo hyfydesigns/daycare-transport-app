@@ -48,6 +48,7 @@ model Child {
   emergencyRelation String?
 
   specialInstructions String?
+  defaultDropoff      String  @default("HOME") // HOME | DAYCARE
   active              Boolean @default(true)
 
   createdAt DateTime @default(now())
@@ -259,6 +260,7 @@ model AttendanceLog {
 
   actualPickupTime  String?
   actualDropoffTime String?
+  dropoffLocation   String? // HOME | DAYCARE | null (null = use child's defaultDropoff)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
