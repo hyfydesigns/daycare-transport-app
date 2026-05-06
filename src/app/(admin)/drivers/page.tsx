@@ -134,6 +134,7 @@ export default async function DriversPage() {
                       driverName={d.user.name}
                       schools={schools}
                       vehicles={vehicles}
+                      assignedSchoolIds={d.schoolAssignments.map((a) => a.schoolId)}
                     />
                     <div className="flex items-center gap-1">
                       <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
@@ -230,6 +231,7 @@ export default async function DriversPage() {
                           driverName={d.user.name}
                           schools={schools}
                           vehicles={vehicles}
+                          assignedSchoolIds={d.schoolAssignments.map((a) => a.schoolId)}
                         />
                         <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
                         <DeleteConfirmButton
