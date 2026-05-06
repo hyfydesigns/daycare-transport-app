@@ -11,14 +11,39 @@ interface Driver {
   id: string; name: string; email: string; phone: string;
   licenseNumber: string; licenseExpiry: string; backgroundCheckStatus: string;
 }
+interface RouteOption { id: string; name: string; code: string; }
 
-export function DriverFormDialog({ driver }: { driver?: Driver }) {
+interface Props {
+  driver?: Driver;
+  allRoutes?: RouteOption[];
+  assignedRouteIds?: string[];
+}
+
+export function DriverFormDialog({ driver, allRoutes = [], assignedRouteIds = [] }: Props) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  // Route checkboxes state (edit mode only)
+  const [selectedRouteIds, setSelectedRouteIds] = useState<Set<string>>(new Set(assignedRouteIds));
   const router = useRouter();
+
+  function handleOpen(v: boolean) {
+    setOpen(v);
+    setFormError(null);
+    setEmailError(null);
+    setEmailSent(false);
+    if (v) setSelectedRouteIds(new Set(assignedRouteIds)); // reset to current on open
+  }
+
+  function toggleRoute(id: string) {
+    setSelectedRouteIds((prev) => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -36,13 +61,41 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
     const res = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
     const json = await res.json();
 
-    setLoading(false);
-
-    // Server-side error (e.g. duplicate email)
     if (!res.ok) {
       setFormError(json?.error ?? `Unexpected error (${res.status})`);
+      setLoading(false);
       return;
     }
+
+    // Handle route assignments in edit mode
+    if (driver && allRoutes.length > 0) {
+      const prev = new Set(assignedRouteIds);
+      const next = selectedRouteIds;
+
+      // Routes to add (in next but not prev)
+      const toAdd = [...next].filter((id) => !prev.has(id));
+      // Routes to remove (in prev but not next)
+      const toRemove = [...prev].filter((id) => !next.has(id));
+
+      await Promise.all([
+        ...toAdd.map((routeId) =>
+          fetch(`/api/routes/${routeId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ driverId: driver.id }),
+          })
+        ),
+        ...toRemove.map((routeId) =>
+          fetch(`/api/routes/${routeId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ driverId: null }),
+          })
+        ),
+      ]);
+    }
+
+    setLoading(false);
 
     if (!driver) {
       if (json.emailError) {
@@ -61,7 +114,7 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); setFormError(null); setEmailError(null); setEmailSent(false); }}>
+    <Dialog open={open} onOpenChange={handleOpen}>
       <DialogTrigger asChild>
         {driver ? (
           <Button variant="ghost" size="sm"><Pencil className="h-4 w-4" /></Button>
@@ -69,7 +122,7 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
           <Button><Plus className="h-4 w-4" /> Add Driver</Button>
         )}
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[550px]">
+      <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{driver ? "Edit Driver" : "Add Driver"}</DialogTitle>
         </DialogHeader>
@@ -136,6 +189,34 @@ export function DriverFormDialog({ driver }: { driver?: Driver }) {
               </select>
             </div>
           </div>
+
+          {/* Route assignment — edit mode only */}
+          {driver && allRoutes.length > 0 && (
+            <div className="space-y-2">
+              <Label>Route Assignments</Label>
+              <div className="border rounded-lg divide-y max-h-40 overflow-y-auto">
+                {allRoutes.map((r) => (
+                  <label
+                    key={r.id}
+                    className="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-muted/50 transition-colors"
+                  >
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-gray-300 accent-primary"
+                      checked={selectedRouteIds.has(r.id)}
+                      onChange={() => toggleRoute(r.id)}
+                    />
+                    <span className="text-sm flex-1">{r.name}</span>
+                    <span className="text-xs text-muted-foreground font-mono">{r.code}</span>
+                  </label>
+                ))}
+              </div>
+              {allRoutes.length === 0 && (
+                <p className="text-xs text-muted-foreground">No active routes available.</p>
+              )}
+            </div>
+          )}
+
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
             <Button type="submit" disabled={loading || emailSent}>{loading ? "Saving…" : "Save"}</Button>

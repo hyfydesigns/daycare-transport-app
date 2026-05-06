@@ -19,7 +19,7 @@ const bgColors: Record<string, string> = {
 
 export default async function DriversPage() {
   const session = await auth();
-  const [drivers, schools, vehicles] = await Promise.all([
+  const [drivers, schools, vehicles, allRoutes] = await Promise.all([
     prisma.driver.findMany({
       where: { active: true },
       include: {
@@ -34,6 +34,7 @@ export default async function DriversPage() {
     }),
     prisma.school.findMany({ where: { active: true }, orderBy: { name: "asc" } }),
     prisma.vehicle.findMany({ where: { status: { not: "RETIRED" } }, orderBy: { identifier: "asc" } }),
+    prisma.route.findMany({ where: { active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, code: true } }),
   ]);
   const isAdmin = session?.user.role === "ADMIN";
 
@@ -137,7 +138,11 @@ export default async function DriversPage() {
                       assignedSchoolIds={d.schoolAssignments.map((a) => a.schoolId)}
                     />
                     <div className="flex items-center gap-1">
-                      <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
+                      <DriverFormDialog
+                        driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }}
+                        allRoutes={allRoutes}
+                        assignedRouteIds={d.routes.map((r) => r.id)}
+                      />
                       <DeleteConfirmButton
                         endpoint={`/api/drivers/${d.id}`}
                         label={d.user.name}
@@ -233,7 +238,11 @@ export default async function DriversPage() {
                           vehicles={vehicles}
                           assignedSchoolIds={d.schoolAssignments.map((a) => a.schoolId)}
                         />
-                        <DriverFormDialog driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }} />
+                        <DriverFormDialog
+                        driver={{ ...d, name: d.user.name, email: d.user.email, phone: d.user.phone || "" }}
+                        allRoutes={allRoutes}
+                        assignedRouteIds={d.routes.map((r) => r.id)}
+                      />
                         <DeleteConfirmButton
                           endpoint={`/api/drivers/${d.id}`}
                           label={d.user.name}
