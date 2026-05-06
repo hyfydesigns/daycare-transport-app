@@ -64,13 +64,37 @@ export function ChildForm({ schools, routes, defaultValues }: ChildFormProps) {
 
     const child = await res.json();
 
-    // Assign route if specified
-    if (routeId && routeId !== "none") {
-      await fetch("/api/routes/" + routeId + "/children", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ childId: child.id }),
-      });
+    if (isEdit) {
+      const prevRouteId = defaultValues?.routeId ?? "";
+      const nextRouteId = routeId ?? "";
+
+      if (nextRouteId !== prevRouteId) {
+        // Deactivate the old assignment
+        if (prevRouteId && prevRouteId !== "none") {
+          await fetch(`/api/routes/${prevRouteId}/children`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ childId: child.id }),
+          });
+        }
+        // Create the new assignment
+        if (nextRouteId && nextRouteId !== "none") {
+          await fetch(`/api/routes/${nextRouteId}/children`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ childId: child.id }),
+          });
+        }
+      }
+    } else {
+      // Create mode — just assign if a route was chosen
+      if (routeId && routeId !== "none") {
+        await fetch(`/api/routes/${routeId}/children`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ childId: child.id }),
+        });
+      }
     }
 
     router.push("/children");
@@ -159,22 +183,20 @@ export function ChildForm({ schools, routes, defaultValues }: ChildFormProps) {
       <Card>
         <CardHeader><CardTitle className="text-base">Route & Notes</CardTitle></CardHeader>
         <CardContent className="space-y-4">
-          {!isEdit && (
-            <div className="space-y-2">
-              <Label htmlFor="routeId">Assign to Route</Label>
-              <select
-                id="routeId"
-                name="routeId"
-                defaultValue={defaultValues?.routeId || "none"}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
-              >
-                <option value="none">No route yet</option>
-                {routes.map((r) => (
-                  <option key={r.id} value={r.id}>{r.name} ({r.code})</option>
-                ))}
-              </select>
-            </div>
-          )}
+          <div className="space-y-2">
+            <Label htmlFor="routeId">Assign to Route</Label>
+            <select
+              id="routeId"
+              name="routeId"
+              defaultValue={defaultValues?.routeId || "none"}
+              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm"
+            >
+              <option value="none">No route</option>
+              {routes.map((r) => (
+                <option key={r.id} value={r.id}>{r.name} ({r.code})</option>
+              ))}
+            </select>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="specialInstructions">Special Instructions</Label>
             <Textarea
