@@ -18,6 +18,9 @@ async function saveSettings(formData: FormData) {
   const orgName = (formData.get("orgName") as string)?.trim();
   if (orgName) await setSetting("orgName", orgName);
 
+  const orgAddress = (formData.get("orgAddress") as string)?.trim();
+  await setSetting("orgAddress", orgAddress ?? "");
+
   revalidatePath("/", "layout"); // refresh sidebar everywhere
   redirect("/settings?saved=1");
 }
@@ -32,6 +35,7 @@ export default async function SettingsPage({
 
   const { saved } = await searchParams;
   const orgName = await getSetting("orgName", "Sunshine Daycare");
+  const orgAddress = await getSetting("orgAddress", "");
 
   return (
     <div className="p-4 md:p-6 space-y-6 max-w-2xl">
@@ -72,6 +76,19 @@ export default async function SettingsPage({
                 maxLength={80}
                 required
               />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="orgAddress">Daycare Address</Label>
+              <Input
+                id="orgAddress"
+                name="orgAddress"
+                defaultValue={orgAddress}
+                placeholder="e.g. 123 Main St, Springfield, IL 62701"
+                maxLength={200}
+              />
+              <p className="text-xs text-muted-foreground">
+                Shown to drivers as the pickup/drop-off location for the daycare.
+              </p>
             </div>
           </CardContent>
         </Card>

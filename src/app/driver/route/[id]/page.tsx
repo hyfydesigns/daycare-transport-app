@@ -2,10 +2,11 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect, notFound } from "next/navigation";
 import { todayStr, ATTENDANCE_LABELS } from "@/lib/utils";
+import { getSetting } from "@/lib/settings";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, School, Home, AlertCircle, Clock } from "lucide-react";
+import { ArrowLeft, School, Home, AlertCircle, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { DriverStopActions } from "./driver-stop-actions";
 import { RouteMap, type MapStop } from "@/components/map/map-lazy";
@@ -19,7 +20,7 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
 
   const today = todayStr();
 
-  const [route, todayAttendance] = await Promise.all([
+  const [route, todayAttendance, orgName, orgAddress] = await Promise.all([
     prisma.route.findUnique({
       where: { id },
       include: {
@@ -35,6 +36,8 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
       },
     }),
     prisma.attendanceLog.findMany({ where: { date: today } }),
+    getSetting("orgName", "Daycare"),
+    getSetting("orgAddress", ""),
   ]);
 
   if (!route) notFound();
@@ -77,6 +80,23 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
       {/* Route map — compact strip */}
       {mapStops.length > 0 && (
         <RouteMap stops={mapStops} height="220px" />
+      )}
+
+      {/* Daycare address reference */}
+      {orgAddress && (
+        <Card className="border-violet-200 bg-violet-50/50">
+          <CardContent className="py-3">
+            <div className="flex items-center gap-3">
+              <div className="h-7 w-7 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                <MapPin className="h-4 w-4 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-xs font-semibold text-violet-900">{orgName} (Daycare)</p>
+                <p className="text-xs text-violet-700">{orgAddress}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Stops */}
@@ -142,7 +162,7 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
                                 childId={child.id}
                                 childName={child.fullName.split(" ")[0]}
                                 date={today}
-                                currentStatus={log?.status || "TRANSPORTED"}
+                                currentStatus={log?.status ?? ""}
                                 stopType={stop.type as "PICKUP" | "DROPOFF"}
                               />
                             </div>

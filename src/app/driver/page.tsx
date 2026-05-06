@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { todayStr } from "@/lib/utils";
+import { getSetting } from "@/lib/settings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -15,6 +16,11 @@ export default async function DriverHomePage() {
   if (!session) redirect("/login");
 
   const today = todayStr();
+
+  const [orgName, orgAddress] = await Promise.all([
+    getSetting("orgName", "Daycare"),
+    getSetting("orgAddress", ""),
+  ]);
 
   // Find the driver record
   const driver = await prisma.driver.findFirst({
@@ -76,6 +82,23 @@ export default async function DriverHomePage() {
           {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </p>
       </div>
+
+      {/* Daycare address reference */}
+      {orgAddress && (
+        <Card className="border-violet-200 bg-violet-50/50">
+          <CardContent className="pt-4">
+            <div className="flex items-start gap-3">
+              <div className="h-8 w-8 rounded-lg bg-violet-100 flex items-center justify-center shrink-0">
+                <MapPin className="h-4 w-4 text-violet-600" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-violet-900">{orgName} (Daycare)</p>
+                <p className="text-xs text-violet-700 mt-0.5">{orgAddress}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {driver.routes.length === 0 && driver.schoolAssignments.length === 0 ? (
         <Card>
