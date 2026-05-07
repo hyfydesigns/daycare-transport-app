@@ -36,15 +36,17 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const child = await prisma.child.create({ data: body });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "CREATE",
-      entity: "Child",
-      entityId: child.id,
-      diff: JSON.stringify(body),
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "CREATE",
+        entity: "Child",
+        entityId: child.id,
+        diff: JSON.stringify(body),
+      },
+    });
+  } catch { /* audit log is non-critical */ }
 
   return NextResponse.json(child, { status: 201 });
 }

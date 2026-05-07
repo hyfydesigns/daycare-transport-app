@@ -30,15 +30,17 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const child = await prisma.child.update({ where: { id }, data: body });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "UPDATE",
-      entity: "Child",
-      entityId: id,
-      diff: JSON.stringify(body),
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "UPDATE",
+        entity: "Child",
+        entityId: id,
+        diff: JSON.stringify(body),
+      },
+    });
+  } catch { /* audit log is non-critical */ }
 
   return NextResponse.json(child);
 }
@@ -52,14 +54,16 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
 
   await prisma.child.update({ where: { id }, data: { active: false } });
 
-  await prisma.auditLog.create({
-    data: {
-      userId: session.user.id,
-      action: "DELETE",
-      entity: "Child",
-      entityId: id,
-    },
-  });
+  try {
+    await prisma.auditLog.create({
+      data: {
+        userId: session.user.id,
+        action: "DELETE",
+        entity: "Child",
+        entityId: id,
+      },
+    });
+  } catch { /* audit log is non-critical */ }
 
   return NextResponse.json({ success: true });
 }
