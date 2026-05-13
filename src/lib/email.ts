@@ -24,9 +24,8 @@ export async function sendWelcomeEmail({
   orgName = "DaycareRide",
 }: WelcomeEmailOptions) {
   const firstName = driverName.split(" ")[0];
-  // Password is alphanumeric-only so no HTML escaping needed.
-  // Split into groups of 4 for easier reading without changing the actual value.
-  const displayPassword = tempPassword.match(/.{1,4}/g)?.join(" ") ?? tempPassword;
+  // Embed credentials directly in the sign-in link — driver just taps and lands logged in.
+  const signInUrl = `${loginUrl}?email=${encodeURIComponent(to)}&password=${encodeURIComponent(tempPassword)}`;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -63,18 +62,15 @@ export async function sendWelcomeEmail({
               <table width="100%" cellpadding="0" cellspacing="0" style="background-color:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;margin-bottom:28px;">
                 <tr>
                   <td style="padding:20px 24px;">
-                    <p style="margin:0 0 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;">Your Login Credentials</p>
+                    <p style="margin:0 0 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;">Your Login Details</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td style="padding:6px 0;font-size:13px;color:#6b7280;width:40%;">Email</td>
                         <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${to}</td>
                       </tr>
                       <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#6b7280;vertical-align:top;">Password</td>
-                        <td style="padding:6px 0;">
-                          <span style="display:inline-block;font-family:'Courier New',Courier,monospace;font-size:16px;font-weight:700;color:#2563eb;background-color:#eff6ff;padding:6px 12px;border-radius:6px;letter-spacing:0.12em;">${displayPassword}</span>
-                          <p style="margin:4px 0 0;font-size:11px;color:#6b7280;">Type without spaces</p>
-                        </td>
+                        <td style="padding:6px 0;font-size:13px;color:#6b7280;">Password</td>
+                        <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${tempPassword}</td>
                       </tr>
                     </table>
                   </td>
@@ -85,7 +81,7 @@ export async function sendWelcomeEmail({
               <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:28px;">
                 <tr>
                   <td align="center">
-                    <a href="${loginUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 32px;border-radius:9px;">
+                    <a href="${signInUrl}" style="display:inline-block;background-color:#2563eb;color:#ffffff;text-decoration:none;font-size:15px;font-weight:600;padding:13px 32px;border-radius:9px;">
                       Sign In Now →
                     </a>
                   </td>
@@ -128,11 +124,13 @@ export async function sendWelcomeEmail({
 
   const text = `Welcome to ${orgName}, ${firstName}!
 
-Your driver account has been created.
+Your driver account has been created. Tap the link below to sign in automatically:
 
-Login URL: ${loginUrl}
-Email: ${to}
-Temporary Password: ${displayPassword}  (type without spaces)
+${signInUrl}
+
+If the link doesn't work, go to ${loginUrl} and use:
+  Email:    ${to}
+  Password: ${tempPassword}
 
 IMPORTANT: Please change your password after your first login (My Profile → Change Password).
 

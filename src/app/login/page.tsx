@@ -1,39 +1,49 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Bus, AlertCircle } from "lucide-react";
+import { Bus, AlertCircle, Loader2 } from "lucide-react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const searchParams = useSearchParams();
+  const prefillEmail    = searchParams.get("email")    ?? "";
+  const prefillPassword = searchParams.get("password") ?? "";
+  const isAutoLogin     = !!(prefillEmail && prefillPassword);
+
+  const [email, setEmail]       = useState(prefillEmail);
+  const [password, setPassword] = useState(prefillPassword);
+  const [error, setError]       = useState("");
+  const [loading, setLoading]   = useState(isAutoLogin); // show spinner immediately if auto-login
   const router = useRouter();
 
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  async function doSignIn(e?: string, p?: string) {
+    const em = e ?? email;
+    const pw = p ?? password;
     setLoading(true);
     setError("");
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
-    });
+    const result = await signIn("credentials", { email: em, password: pw, redirect: false });
     if (result?.error) {
       setError("Invalid email or password.");
       setLoading(false);
     } else {
       const session = await getSession();
-      const role = session?.user?.role;
-      router.push(role === "DRIVER" ? "/driver" : "/dashboard");
+      router.push(session?.user?.role === "DRIVER" ? "/driver" : "/dashboard");
       router.refresh();
     }
   }
+
+  // Auto-submit when pre-filled credentials arrive from the welcome email link
+  useEffect(() => {
+    if (isAutoLogin) {
+      doSignIn(prefillEmail, prefillPassword);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
@@ -49,43 +59,55 @@ export default function LoginPage() {
         <Card className="shadow-xl border-0">
           <CardHeader className="pb-4">
             <CardTitle className="text-xl">Sign in</CardTitle>
-            <CardDescription>Enter your credentials to access the system</CardDescription>
+            <CardDescription>
+              {isAutoLogin && loading
+                ? "Signing you in automatically…"
+                : "Enter your credentials to access the system"}
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
+            {isAutoLogin && loading ? (
+              <div className="flex flex-col items-center py-8 gap-3 text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-sm">Signing in…</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  required
-                />
-              </div>
-              {error && (
-                <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {error}
+            ) : (
+              <form onSubmit={(e) => { e.preventDefault(); doSignIn(); }} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    required
+                  />
                 </div>
-              )}
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in…" : "Sign in"}
-              </Button>
-            </form>
-
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                </div>
+                {error && (
+                  <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
+                    <AlertCircle className="h-4 w-4 shrink-0" />
+                    {error}
+                  </div>
+                )}
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Signing in…</> : "Sign in"}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>
