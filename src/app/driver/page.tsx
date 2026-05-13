@@ -6,7 +6,7 @@ import { getSetting } from "@/lib/settings";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Bus, MapPin, Users, AlertCircle, Clock, ChevronRight, School } from "lucide-react";
+import { Bus, MapPin, Users, AlertCircle, Clock, ChevronRight, School, Users2 } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -219,6 +219,12 @@ export default async function DriverHomePage() {
                         {a.notes}
                       </div>
                     )}
+                    <Link href={`/driver/school/${a.id}`} className="block mt-3">
+                      <Button className="w-full bg-blue-600 hover:bg-blue-700 text-white">
+                        <Users2 className="h-4 w-4 mr-2" /> View Children & Start Run
+                        <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </Link>
                   </div>
                 </div>
               </CardContent>
