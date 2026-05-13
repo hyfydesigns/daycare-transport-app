@@ -6,26 +6,30 @@ import crypto from "crypto";
 import { sendWelcomeEmail } from "@/lib/email";
 import { getSetting } from "@/lib/settings";
 
-/** Generate a secure random temp password like "Tr4x!9Kp2m" */
-function generateTempPassword(length = 12): string {
-  const upper = "ABCDEFGHJKLMNPQRSTUVWXYZ";
-  const lower = "abcdefghjkmnpqrstuvwxyz";
-  const digits = "23456789";
-  const special = "!@#$%";
-  const all = upper + lower + digits + special;
+/**
+ * Generate a secure random temp password — alphanumeric only, no special
+ * characters that cause copy-paste issues or misreads in email clients.
+ * Visually ambiguous chars (0, O, 1, l, I) are excluded so drivers can
+ * type it manually without confusion. 16 chars = ~95 bits of entropy.
+ */
+function generateTempPassword(length = 16): string {
+  const upper  = "ABCDEFGHJKLMNPQRSTUVWXYZ"; // no I, O
+  const lower  = "abcdefghjkmnpqrstuvwxyz";  // no i, l, o
+  const digits = "23456789";                  // no 0, 1
+  const all    = upper + lower + digits;
 
-  const bytes = crypto.randomBytes(length + 4);
+  const bytes = crypto.randomBytes(length + 3);
+  // Guarantee at least one of each group
   let result =
-    upper[bytes[0] % upper.length] +
-    lower[bytes[1] % lower.length] +
-    digits[bytes[2] % digits.length] +
-    special[bytes[3] % special.length];
+    upper [bytes[0] % upper.length]  +
+    lower [bytes[1] % lower.length]  +
+    digits[bytes[2] % digits.length];
 
-  for (let i = 4; i < length; i++) {
+  for (let i = 3; i < length; i++) {
     result += all[bytes[i] % all.length];
   }
 
-  // Shuffle using Fisher-Yates on the char array
+  // Shuffle using Fisher-Yates
   const arr = result.split("");
   const shuffleBytes = crypto.randomBytes(arr.length);
   for (let i = arr.length - 1; i > 0; i--) {
@@ -57,7 +61,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
   const body = await req.json();
-  const { name, email, phone, licenseNumber, licenseExpiry, backgroundCheckStatus, notes } = body;
+  const { name, phone, licenseNumber, licenseExpiry, backgroundCheckStatus, notes } = body;
+  const email = (body.email as string).trim().toLowerCase();
 
   // Generate a secure temporary password (ignore any password sent from the form)
   const tempPassword = generateTempPassword();

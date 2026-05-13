@@ -24,11 +24,9 @@ export async function sendWelcomeEmail({
   orgName = "DaycareRide",
 }: WelcomeEmailOptions) {
   const firstName = driverName.split(" ")[0];
-  const safePassword = tempPassword
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+  // Password is alphanumeric-only so no HTML escaping needed.
+  // Split into groups of 4 for easier reading without changing the actual value.
+  const displayPassword = tempPassword.match(/.{1,4}/g)?.join(" ") ?? tempPassword;
 
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -72,9 +70,10 @@ export async function sendWelcomeEmail({
                         <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${to}</td>
                       </tr>
                       <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#6b7280;">Password</td>
+                        <td style="padding:6px 0;font-size:13px;color:#6b7280;vertical-align:top;">Password</td>
                         <td style="padding:6px 0;">
-                          <code style="font-size:14px;font-weight:700;color:#2563eb;background-color:#eff6ff;padding:3px 8px;border-radius:5px;letter-spacing:0.05em;">${safePassword}</code>
+                          <span style="display:inline-block;font-family:'Courier New',Courier,monospace;font-size:16px;font-weight:700;color:#2563eb;background-color:#eff6ff;padding:6px 12px;border-radius:6px;letter-spacing:0.12em;">${displayPassword}</span>
+                          <p style="margin:4px 0 0;font-size:11px;color:#6b7280;">Type without spaces</p>
                         </td>
                       </tr>
                     </table>
@@ -133,7 +132,7 @@ Your driver account has been created.
 
 Login URL: ${loginUrl}
 Email: ${to}
-Temporary Password: ${tempPassword}
+Temporary Password: ${displayPassword}  (type without spaces)
 
 IMPORTANT: Please change your password after your first login (My Profile → Change Password).
 
