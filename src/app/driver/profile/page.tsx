@@ -320,6 +320,7 @@ export default async function DriverProfilePage({
                 id="currentPassword"
                 name="currentPassword"
                 type="password"
+                autoComplete="current-password"
                 placeholder="••••••••"
                 required
               />
@@ -330,6 +331,7 @@ export default async function DriverProfilePage({
                 id="newPassword"
                 name="newPassword"
                 type="password"
+                autoComplete="new-password"
                 placeholder="At least 8 characters"
                 minLength={8}
                 required
@@ -341,6 +343,7 @@ export default async function DriverProfilePage({
                 id="confirmPassword"
                 name="confirmPassword"
                 type="password"
+                autoComplete="new-password"
                 placeholder="••••••••"
                 minLength={8}
                 required
