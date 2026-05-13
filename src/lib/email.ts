@@ -65,11 +65,11 @@ export async function sendWelcomeEmail({
                     <p style="margin:0 0 14px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:0.06em;color:#94a3b8;">Your Login Details</p>
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#6b7280;width:40%;">Email</td>
+                        <td style="padding:6px 0;font-size:13px;color:#6b7280;width:40%;padding-right:16px;">Email:</td>
                         <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${to}</td>
                       </tr>
                       <tr>
-                        <td style="padding:6px 0;font-size:13px;color:#6b7280;">Password</td>
+                        <td style="padding:6px 0;font-size:13px;color:#6b7280;padding-right:16px;">Password:</td>
                         <td style="padding:6px 0;font-size:13px;font-weight:600;color:#111827;">${tempPassword}</td>
                       </tr>
                     </table>

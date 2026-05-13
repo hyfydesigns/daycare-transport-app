@@ -5,7 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Plus, Pencil, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Plus, Pencil, AlertCircle, CheckCircle2, Mail, Loader2 } from "lucide-react";
 
 interface Driver {
   id: string; name: string; email: string; phone: string;
@@ -25,6 +25,8 @@ export function DriverFormDialog({ driver, allRoutes = [], assignedRouteIds = []
   const [formError, setFormError] = useState<string | null>(null);
   const [emailError, setEmailError] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendStatus, setResendStatus] = useState<"idle" | "sent" | "error">("idle");
   // Route checkboxes state (edit mode only)
   const [selectedRouteIds, setSelectedRouteIds] = useState<Set<string>>(new Set(assignedRouteIds));
   const router = useRouter();
@@ -34,7 +36,17 @@ export function DriverFormDialog({ driver, allRoutes = [], assignedRouteIds = []
     setFormError(null);
     setEmailError(null);
     setEmailSent(false);
+    setResendStatus("idle");
     if (v) setSelectedRouteIds(new Set(assignedRouteIds)); // reset to current on open
+  }
+
+  async function handleResendWelcome() {
+    if (!driver) return;
+    setResendLoading(true);
+    setResendStatus("idle");
+    const res = await fetch(`/api/drivers/${driver.id}/resend-welcome`, { method: "POST" });
+    setResendLoading(false);
+    setResendStatus(res.ok ? "sent" : "error");
   }
 
   function toggleRoute(id: string) {
@@ -213,6 +225,35 @@ export function DriverFormDialog({ driver, allRoutes = [], assignedRouteIds = []
               </div>
               {allRoutes.length === 0 && (
                 <p className="text-xs text-muted-foreground">No active routes available.</p>
+              )}
+            </div>
+          )}
+
+          {/* Resend welcome email — edit mode only */}
+          {driver && (
+            <div className="border-t pt-3 space-y-2">
+              <Button
+                type="button"
+                variant="outline"
+                className="w-full"
+                onClick={handleResendWelcome}
+                disabled={resendLoading}
+              >
+                {resendLoading
+                  ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Sending…</>
+                  : <><Mail className="h-4 w-4 mr-2" />Send Welcome Email</>}
+              </Button>
+              {resendStatus === "sent" && (
+                <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded-md px-3 py-2 flex items-center gap-1">
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                  Welcome email sent with a new temporary password.
+                </p>
+              )}
+              {resendStatus === "error" && (
+                <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-md px-3 py-2 flex items-center gap-1">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  Failed to send email. Check your email settings.
+                </p>
               )}
             </div>
           )}
