@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcryptjs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,18 +36,11 @@ async function changePassword(formData: FormData) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const currentPassword = formData.get("currentPassword") as string;
   const newPassword     = formData.get("newPassword")     as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (newPassword !== confirmPassword) redirect("/driver/profile?error=mismatch");
   if (newPassword.length < 8)          redirect("/driver/profile?error=short");
-
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!user) redirect("/login");
-
-  const valid = await bcrypt.compare(currentPassword, user.hashedPassword);
-  if (!valid) redirect("/driver/profile?error=wrong");
 
   const hashed = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({ where: { id: session.user.id }, data: { hashedPassword: hashed } });
@@ -85,9 +77,8 @@ async function updateDriverDetails(formData: FormData) {
 
 const ERRORS: Record<string, string> = {
   name:     "Name cannot be empty.",
-  mismatch: "New passwords do not match.",
+  mismatch: "Passwords do not match.",
   short:    "Password must be at least 8 characters.",
-  wrong:    "Current password is incorrect.",
   license:  "License number cannot be empty.",
   expiry:   "License expiry date is required.",
 };
@@ -314,17 +305,6 @@ export default async function DriverProfilePage({
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                required
-              />
-            </div>
             <div className="space-y-1.5">
               <Label htmlFor="newPassword">New Password</Label>
               <Input

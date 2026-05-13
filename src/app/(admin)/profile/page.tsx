@@ -2,7 +2,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import bcrypt from "bcryptjs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,18 +34,11 @@ async function changePassword(formData: FormData) {
   const session = await auth();
   if (!session) redirect("/login");
 
-  const currentPassword = formData.get("currentPassword") as string;
   const newPassword     = formData.get("newPassword")     as string;
   const confirmPassword = formData.get("confirmPassword") as string;
 
   if (newPassword !== confirmPassword) redirect("/profile?error=mismatch");
   if (newPassword.length < 8)         redirect("/profile?error=short");
-
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
-  if (!user) redirect("/login");
-
-  const valid = await bcrypt.compare(currentPassword, user.hashedPassword);
-  if (!valid) redirect("/profile?error=wrong");
 
   const hashed = await bcrypt.hash(newPassword, 10);
   await prisma.user.update({
@@ -59,9 +51,8 @@ async function changePassword(formData: FormData) {
 
 const ERRORS: Record<string, string> = {
   name:     "Name cannot be empty.",
-  mismatch: "New passwords do not match.",
-  short:    "New password must be at least 8 characters.",
-  wrong:    "Current password is incorrect.",
+  mismatch: "Passwords do not match.",
+  short:    "Password must be at least 8 characters.",
 };
 
 export default async function ProfilePage({
@@ -182,18 +173,6 @@ export default async function ProfilePage({
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="currentPassword">Current Password</Label>
-              <Input
-                id="currentPassword"
-                name="currentPassword"
-                type="password"
-                autoComplete="current-password"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="newPassword">New Password</Label>
               <Input
