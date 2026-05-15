@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { signIn, getSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Bus, AlertCircle, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const prefillEmail    = searchParams.get("email")    ?? "";
   const prefillPassword = searchParams.get("password") ?? "";
@@ -19,7 +19,7 @@ export default function LoginPage() {
   const [email, setEmail]       = useState(prefillEmail);
   const [password, setPassword] = useState(prefillPassword);
   const [error, setError]       = useState("");
-  const [loading, setLoading]   = useState(isAutoLogin); // show spinner immediately if auto-login
+  const [loading, setLoading]   = useState(isAutoLogin);
   const router = useRouter();
 
   async function doSignIn(e?: string, p?: string) {
@@ -38,7 +38,6 @@ export default function LoginPage() {
     }
   }
 
-  // Auto-submit when pre-filled credentials arrive from the welcome email link
   useEffect(() => {
     if (isAutoLogin) {
       doSignIn(prefillEmail, prefillPassword);
@@ -46,6 +45,70 @@ export default function LoginPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  return (
+    <Card className="shadow-xl border-0">
+      <CardHeader className="pb-4">
+        <CardTitle className="text-xl">Sign in</CardTitle>
+        <CardDescription>
+          {isAutoLogin && loading
+            ? "Signing you in automatically…"
+            : "Enter your credentials to access the system"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isAutoLogin && loading ? (
+          <div className="flex flex-col items-center py-8 gap-3 text-muted-foreground">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <p className="text-sm">Signing in…</p>
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); doSignIn(); }} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </div>
+            {error && (
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                {error}
+              </div>
+            )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Signing in…</> : "Sign in"}
+            </Button>
+          </form>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -57,65 +120,15 @@ export default function LoginPage() {
           <p className="text-sm text-gray-500 mt-1">Transportation Management System</p>
         </div>
 
-        <Card className="shadow-xl border-0">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-xl">Sign in</CardTitle>
-            <CardDescription>
-              {isAutoLogin && loading
-                ? "Signing you in automatically…"
-                : "Enter your credentials to access the system"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {isAutoLogin && loading ? (
-              <div className="flex flex-col items-center py-8 gap-3 text-muted-foreground">
-                <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-sm">Signing in…</p>
-              </div>
-            ) : (
-              <form onSubmit={(e) => { e.preventDefault(); doSignIn(); }} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="you@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <Label htmlFor="password">Password</Label>
-                    <Link href="/forgot-password" className="text-xs text-primary hover:underline">
-                      Forgot password?
-                    </Link>
-                  </div>
-                  <Input
-                    id="password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    autoComplete="current-password"
-                    required
-                  />
-                </div>
-                {error && (
-                  <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-md">
-                    <AlertCircle className="h-4 w-4 shrink-0" />
-                    {error}
-                  </div>
-                )}
-                <Button type="submit" className="w-full" disabled={loading}>
-                  {loading ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" />Signing in…</> : "Sign in"}
-                </Button>
-              </form>
-            )}
-          </CardContent>
-        </Card>
+        <Suspense fallback={
+          <Card className="shadow-xl border-0">
+            <CardContent className="pt-10 pb-10 flex justify-center">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            </CardContent>
+          </Card>
+        }>
+          <LoginForm />
+        </Suspense>
       </div>
     </div>
   );
