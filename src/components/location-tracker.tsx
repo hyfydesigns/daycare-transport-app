@@ -1,18 +1,24 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { WifiOff, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { WifiOff, Loader2, Square } from "lucide-react";
 
 type TrackingState = "acquiring" | "active" | "error" | "unsupported";
 
 const SEND_INTERVAL_MS = 10_000; // send at most once every 10 s
 
-export function LocationTracker() {
+export function LocationTracker({ isOnRun }: { isOnRun: boolean }) {
   const [state, setState] = useState<TrackingState>("acquiring");
+  const [stopping, setStopping] = useState(false);
   const lastSentRef = useRef<number>(0);
   const watchIdRef = useRef<number | null>(null);
+  const router = useRouter();
 
   useEffect(() => {
+    // Only track while driver is on a run
+    if (!isOnRun) return;
+
     if (!navigator.geolocation) {
       setState("unsupported");
       return;
@@ -32,7 +38,7 @@ export function LocationTracker() {
         });
         setState("active");
       } catch {
-        // network blip — keep trying, don't change state
+        // network blip — keep trying
       }
     }
 
@@ -51,13 +57,24 @@ export function LocationTracker() {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, []);
+  }, [isOnRun]);
 
-  // Don't render if GPS isn't supported
-  if (state === "unsupported") return null;
+  async function endRun() {
+    setStopping(true);
+    await fetch("/api/driver/run", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isOnRun: false }),
+    });
+    router.push("/driver");
+    router.refresh();
+  }
+
+  // Nothing to show if not on a run or GPS not supported
+  if (!isOnRun || state === "unsupported") return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white border shadow-md rounded-full px-3 py-1.5 text-xs font-medium select-none">
+    <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white border shadow-md rounded-full pl-3 pr-1 py-1.5 text-xs font-medium select-none">
       {state === "acquiring" && (
         <>
           <Loader2 className="h-3 w-3 animate-spin text-blue-500 shrink-0" />
@@ -79,6 +96,17 @@ export function LocationTracker() {
           <span className="text-red-600">Location unavailable</span>
         </>
       )}
+
+      {/* End Run shortcut */}
+      <button
+        onClick={endRun}
+        disabled={stopping}
+        className="ml-1 flex items-center gap-1 bg-red-100 hover:bg-red-200 text-red-700 rounded-full px-2 py-1 transition-colors disabled:opacity-50"
+        title="End run"
+      >
+        <Square className="h-3 w-3" />
+        {stopping ? "Ending…" : "End Run"}
+      </button>
     </div>
   );
 }

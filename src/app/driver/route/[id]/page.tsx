@@ -44,6 +44,9 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
 
   if (!route) notFound();
 
+  const driver = await prisma.driver.findFirst({ where: { userId: session.user.id } });
+  const isOnRun = driver?.isOnRun ?? false;
+
   const exceptionMap = new Map(todayAttendance.map((l) => [l.childId, l]));
 
   // Build map stops for this route
@@ -69,8 +72,8 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
 
   return (
     <div className="p-4 space-y-4">
-      {/* GPS tracker — runs silently in background, shows status pill */}
-      <LocationTracker />
+      {/* GPS tracker — only active when driver is on a run */}
+      <LocationTracker isOnRun={isOnRun} />
 
       <div className="flex items-center gap-3">
         <Link href="/driver">

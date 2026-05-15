@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Bus, MapPin, Users, AlertCircle, Clock, ChevronRight, School, Users2 } from "lucide-react";
 import Link from "next/link";
+import { RunToggleButton } from "./run-toggle";
 
 export const dynamic = "force-dynamic";
 
@@ -82,6 +83,22 @@ export default async function DriverHomePage() {
           {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
         </p>
       </div>
+
+      {/* Run status + toggle */}
+      <Card className={driver.isOnRun ? "border-green-300 bg-green-50/50" : "border-slate-200"}>
+        <CardContent className="pt-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <span className={`relative flex h-3 w-3 shrink-0 ${driver.isOnRun ? "" : "hidden"}`}>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500" />
+            </span>
+            <p className="font-semibold text-sm">
+              {driver.isOnRun ? "Run in progress — location sharing is on" : "Ready to start your run?"}
+            </p>
+          </div>
+          <RunToggleButton isOnRun={driver.isOnRun} />
+        </CardContent>
+      </Card>
 
       {/* Daycare address reference */}
       {orgAddress && (

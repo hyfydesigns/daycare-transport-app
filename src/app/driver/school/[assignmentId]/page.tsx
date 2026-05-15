@@ -58,8 +58,8 @@ export default async function SchoolRunPage({
 
   return (
     <div className="p-4 space-y-4">
-      {/* GPS tracker — runs silently in background */}
-      <LocationTracker />
+      {/* GPS tracker — only active when driver is on a run */}
+      <LocationTracker isOnRun={driver.isOnRun} />
 
       {/* Header */}
       <div className="flex items-center gap-3">

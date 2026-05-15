@@ -125,6 +125,7 @@ model Driver {
   backgroundCheckStatus String  @default("PENDING") // PENDING | CLEARED | FAILED | EXPIRED
   backgroundCheckDate   String?
   active                Boolean @default(true)
+  isOnRun               Boolean @default(false)
   notes                 String?
 
   createdAt DateTime @default(now())

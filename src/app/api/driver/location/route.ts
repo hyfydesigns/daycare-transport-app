@@ -36,7 +36,7 @@ export async function GET() {
   }
 
   const drivers = await prisma.driver.findMany({
-    where: { active: true },
+    where: { active: true, isOnRun: true },
     include: {
       user: { select: { name: true } },
       locations: {
