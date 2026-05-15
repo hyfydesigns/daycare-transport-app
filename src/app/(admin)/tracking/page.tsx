@@ -1,19 +1,7 @@
-import dynamic from "next/dynamic";
 import { MapPin } from "lucide-react";
+import { MapClient } from "./map-client";
 
-export const dynamic_config = "force-dynamic";
-
-const LiveMap = dynamic(
-  () => import("./live-map").then((m) => ({ default: m.LiveMap })),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm animate-pulse rounded-xl border bg-muted/20">
-        Loading map…
-      </div>
-    ),
-  }
-);
+export const dynamic = "force-dynamic";
 
 export default function TrackingPage() {
   return (
@@ -29,7 +17,7 @@ export default function TrackingPage() {
 
       {/* Map fills remaining height */}
       <div className="flex-1 min-h-0">
-        <LiveMap />
+        <MapClient />
       </div>
     </div>
   );
