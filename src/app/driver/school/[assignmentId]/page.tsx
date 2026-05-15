@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, AlertCircle, Clock, MapPin } from "lucide-react";
 import Link from "next/link";
 import { SchoolRunView } from "./school-run-view";
+import { LocationTracker } from "@/components/location-tracker";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +58,9 @@ export default async function SchoolRunPage({
 
   return (
     <div className="p-4 space-y-4">
+      {/* GPS tracker — runs silently in background */}
+      <LocationTracker />
+
       {/* Header */}
       <div className="flex items-center gap-3">
         <Link href="/driver">

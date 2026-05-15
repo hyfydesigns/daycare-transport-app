@@ -11,6 +11,7 @@ import Link from "next/link";
 import { DriverStopActions } from "./driver-stop-actions";
 import { DropoffToggle } from "./dropoff-toggle";
 import { RouteMap, type MapStop } from "@/components/map/map-lazy";
+import { LocationTracker } from "@/components/location-tracker";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,9 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
 
   return (
     <div className="p-4 space-y-4">
+      {/* GPS tracker — runs silently in background, shows status pill */}
+      <LocationTracker />
+
       <div className="flex items-center gap-3">
         <Link href="/driver">
           <Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /></Button>

@@ -5,7 +5,7 @@ import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
   Bus, LayoutDashboard, Users, School, Truck, Route,
-  CalendarCheck, FileBarChart, LogOut, Menu, X, Settings, UserCircle,
+  CalendarCheck, FileBarChart, LogOut, Menu, X, Settings, UserCircle, MapPin,
 } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -19,6 +19,7 @@ const navItems = [
   { href: "/routes",     label: "Routes",     icon: Route },
   { href: "/attendance", label: "Attendance", icon: CalendarCheck },
   { href: "/reports",    label: "Reports",    icon: FileBarChart },
+  { href: "/tracking",   label: "Live Tracking", icon: MapPin },
 ];
 
 interface SidebarProps {
