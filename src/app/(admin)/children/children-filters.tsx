@@ -1,44 +1,46 @@
 "use client";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 
 interface School { id: string; name: string; }
 
 export function ChildrenFilters({ schools }: { schools: School[] }) {
-  const router      = useRouter();
-  const pathname    = usePathname();
+  const router       = useRouter();
+  const pathname     = usePathname();
   const searchParams = useSearchParams();
 
-  const search   = searchParams.get("search")   ?? "";
-  const schoolId = searchParams.get("schoolId") ?? "";
-  const active   = searchParams.get("active")   ?? "true";
+  const [search,   setSearch]   = useState(searchParams.get("search")   ?? "");
+  const [schoolId, setSchoolId] = useState(searchParams.get("schoolId") ?? "");
+  const [active,   setActive]   = useState(searchParams.get("active")   ?? "true");
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  // Keep state in sync when URL changes (back/forward navigation)
+  useEffect(() => {
+    setSearch  (searchParams.get("search")   ?? "");
+    setSchoolId(searchParams.get("schoolId") ?? "");
+    setActive  (searchParams.get("active")   ?? "true");
+  }, [searchParams]);
+
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    const data = new FormData(e.currentTarget);
     const params = new URLSearchParams();
-    const s  = (data.get("search")   as string).trim();
-    const sc = data.get("schoolId")  as string;
-    const ac = data.get("active")    as string;
-    if (s)  params.set("search",   s);
-    if (sc) params.set("schoolId", sc);
-    if (ac) params.set("active",   ac);
+    if (search.trim()) params.set("search",   search.trim());
+    if (schoolId)      params.set("schoolId", schoolId);
+    if (active)        params.set("active",   active);
     router.push(`${pathname}?${params.toString()}`);
   }
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3">
       <input
-        name="search"
-        defaultValue={search}
+        value={search}
+        onChange={(e) => setSearch(e.target.value)}
         placeholder="Search by name…"
         className="h-9 rounded-md border border-input px-3 py-1 text-sm w-full sm:w-48"
       />
       <select
-        name="schoolId"
-        defaultValue={schoolId}
-        key={schoolId}          /* forces re-mount so defaultValue is applied on nav */
+        value={schoolId}
+        onChange={(e) => setSchoolId(e.target.value)}
         className="h-9 rounded-md border border-input px-3 py-1 text-sm w-full sm:w-auto"
       >
         <option value="">All schools</option>
@@ -47,16 +49,17 @@ export function ChildrenFilters({ schools }: { schools: School[] }) {
         ))}
       </select>
       <select
-        name="active"
-        defaultValue={active}
-        key={active}
+        value={active}
+        onChange={(e) => setActive(e.target.value)}
         className="h-9 rounded-md border border-input px-3 py-1 text-sm w-full sm:w-auto"
       >
         <option value="true">Active</option>
         <option value="false">Inactive</option>
         <option value="">All</option>
       </select>
-      <Button type="submit" variant="outline" size="sm" className="w-full sm:w-auto">Filter</Button>
+      <Button type="submit" variant="outline" size="sm" className="w-full sm:w-auto">
+        Filter
+      </Button>
     </form>
   );
 }
