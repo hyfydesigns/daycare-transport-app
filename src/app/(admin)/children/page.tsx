@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ChildDeleteButton } from "./child-actions";
 import { ChildrenFilters } from "./children-filters";
 import { RestoreButton } from "./restore-button";
+import { PermanentDeleteButton } from "./permanent-delete-button";
 import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -125,7 +126,10 @@ export default async function ChildrenPage({
                       </>
                     ) : (
                       session?.user.role === "ADMIN" && (
-                        <RestoreButton childId={child.id} childName={child.fullName} />
+                        <>
+                          <RestoreButton childId={child.id} childName={child.fullName} />
+                          <PermanentDeleteButton childId={child.id} childName={child.fullName} />
+                        </>
                       )
                     )}
                   </div>

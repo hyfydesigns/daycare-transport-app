@@ -45,14 +45,26 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
   return NextResponse.json(child);
 }
 
-export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session || session.user.role !== "ADMIN") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
   const { id } = await params;
+  const permanent = req.nextUrl.searchParams.get("permanent") === "true";
 
-  await prisma.child.update({ where: { id }, data: { active: false } });
+  if (permanent) {
+    // Hard delete — remove all related records first
+    await prisma.$transaction(async (tx) => {
+      await tx.tripStopChild.deleteMany({ where: { childId: id } });
+      await tx.attendanceLog.deleteMany({ where: { childId: id } });
+      await tx.routeChildAssignment.deleteMany({ where: { childId: id } });
+      await tx.child.delete({ where: { id } });
+    });
+  } else {
+    // Soft delete — just mark inactive
+    await prisma.child.update({ where: { id }, data: { active: false } });
+  }
 
   try {
     await prisma.auditLog.create({
@@ -61,6 +73,7 @@ export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ 
         action: "DELETE",
         entity: "Child",
         entityId: id,
+        diff: permanent ? JSON.stringify({ permanent: true }) : undefined,
       },
     });
   } catch { /* audit log is non-critical */ }
