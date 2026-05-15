@@ -6,6 +6,7 @@ import { Users, Plus, Phone, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { ChildDeleteButton } from "./child-actions";
 import { ChildrenFilters } from "./children-filters";
+import { RestoreButton } from "./restore-button";
 import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -109,15 +110,23 @@ export default async function ChildrenPage({
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex items-center justify-end gap-2">
-                    <Link href={`/children/${child.id}/edit`}>
-                      <Button variant="ghost" size="sm">Edit</Button>
-                    </Link>
-                    {session?.user.role === "ADMIN" && (
-                      <ChildDeleteButton
-                        endpoint={`/api/children/${child.id}`}
-                        label={child.fullName}
-                        description="This will deactivate the child's record. They will no longer appear in active routes."
-                      />
+                    {child.active ? (
+                      <>
+                        <Link href={`/children/${child.id}/edit`}>
+                          <Button variant="ghost" size="sm">Edit</Button>
+                        </Link>
+                        {session?.user.role === "ADMIN" && (
+                          <ChildDeleteButton
+                            endpoint={`/api/children/${child.id}`}
+                            label={child.fullName}
+                            description="This will deactivate the child's record. They will no longer appear in active routes."
+                          />
+                        )}
+                      </>
+                    ) : (
+                      session?.user.role === "ADMIN" && (
+                        <RestoreButton childId={child.id} childName={child.fullName} />
+                      )
                     )}
                   </div>
                 </TableCell>
