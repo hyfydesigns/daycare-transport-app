@@ -12,8 +12,11 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const isLoggedIn = !!req.auth;
 
-  if (pathname.startsWith("/login")) {
-    if (isLoggedIn) return NextResponse.redirect(new URL("/dashboard", req.url));
+  // Public routes — accessible without authentication
+  const publicPaths = ["/login", "/forgot-password", "/reset-password"];
+  if (publicPaths.some((p) => pathname.startsWith(p))) {
+    if (isLoggedIn && pathname.startsWith("/login"))
+      return NextResponse.redirect(new URL("/dashboard", req.url));
     return NextResponse.next();
   }
 
