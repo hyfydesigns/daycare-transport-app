@@ -176,7 +176,7 @@ export function DriverFormDialog({ driver, allRoutes = [], assignedRouteIds = []
             </div>
             <div className="space-y-2 col-span-2">
               <Label htmlFor="email">Email *</Label>
-              <Input id="email" name="email" type="email" defaultValue={driver?.email} required={!driver} disabled={!!driver} />
+              <Input id="email" name="email" type="email" defaultValue={driver?.email} required />
               {!driver && (
                 <p className="text-xs text-muted-foreground">
                   A secure temporary password will be emailed to the driver automatically.

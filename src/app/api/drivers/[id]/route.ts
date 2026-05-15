@@ -72,15 +72,31 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const body = await req.json();
-  const { name, phone, ...driverFields } = body;
+  const { name, phone, email: rawEmail, ...driverFields } = body;
 
   const driver = await prisma.driver.findUnique({ where: { id } });
   if (!driver) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  if (name || phone) {
+  const email = rawEmail ? (rawEmail as string).trim().toLowerCase() : undefined;
+
+  // Check email uniqueness if changing email
+  if (email) {
+    const existing = await prisma.user.findFirst({
+      where: { email, NOT: { id: driver.userId } },
+    });
+    if (existing) {
+      return NextResponse.json({ error: "Email is already in use by another account." }, { status: 409 });
+    }
+  }
+
+  if (name || phone || email) {
     await prisma.user.update({
       where: { id: driver.userId },
-      data: { ...(name && { name }), ...(phone && { phone }) },
+      data: {
+        ...(name  && { name }),
+        ...(phone && { phone }),
+        ...(email && { email }),
+      },
     });
   }
 
