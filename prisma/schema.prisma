@@ -4,9 +4,8 @@ generator client {
 }
 
 datasource db {
-  provider  = "postgresql"
-  url       = env("DATABASE_URL")  // Transaction Pooler URL (runtime + Vercel)
-  directUrl = env("DIRECT_URL")    // Direct URL locally; set equal to DATABASE_URL in Vercel
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
