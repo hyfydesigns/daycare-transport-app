@@ -8,6 +8,7 @@ import { ChildDeleteButton } from "./child-actions";
 import { ChildrenFilters } from "./children-filters";
 import { RestoreButton } from "./restore-button";
 import { PermanentDeleteButton } from "./permanent-delete-button";
+import { DuplicateButton } from "./duplicate-button";
 import { auth } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -116,6 +117,7 @@ export default async function ChildrenPage({
                         <Link href={`/children/${child.id}/edit`}>
                           <Button variant="ghost" size="sm">Edit</Button>
                         </Link>
+                        <DuplicateButton childId={child.id} />
                         {session?.user.role === "ADMIN" && (
                           <ChildDeleteButton
                             endpoint={`/api/children/${child.id}`}
