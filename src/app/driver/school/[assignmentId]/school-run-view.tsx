@@ -19,7 +19,12 @@ interface ChildRow {
   homeAddress: string;
   specialInstructions: string | null;
   defaultDropoff: string;
-  log: { status: string; dropoffLocation: string | null } | null;
+  log: {
+    status: string;
+    dropoffLocation: string | null;
+    actualPickupTime: string | null;
+    actualDropoffTime: string | null;
+  } | null;
 }
 
 const EXCEPTION_STATUSES = [
@@ -85,7 +90,11 @@ function ChildActions({
   const now = () => new Date().toTimeString().slice(0, 5);
   const router = useRouter();
   const [status, setStatus] = useState(child.log?.status ?? "");
-  const [loggedTime, setLoggedTime] = useState<string | null>(null);
+  const [loggedTime, setLoggedTime] = useState<string | null>(
+    runType === "PICKUP"
+      ? (child.log?.actualPickupTime ?? null)
+      : (child.log?.actualDropoffTime ?? null)
+  );
   const [dropoffLoc, setDropoffLoc] = useState(
     child.log?.dropoffLocation ?? child.defaultDropoff ?? "HOME"
   );
@@ -94,8 +103,8 @@ function ChildActions({
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const isTransported = status === "TRANSPORTED";
-  const hasException  = status !== "TRANSPORTED" && status !== "";
+  const isDone       = !!loggedTime;
+  const hasException = status !== "TRANSPORTED" && status !== "";
 
   async function markTransported() {
     setLoading(true);
@@ -161,12 +170,12 @@ function ChildActions({
 
       {/* Primary action */}
       <div className="mt-3 space-y-2">
-        {isTransported ? (
+        {isDone ? (
           <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 rounded-xl py-3">
             <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
             <span className="text-sm font-semibold text-green-700">
               {runType === "PICKUP" ? "Picked up" : "Dropped off"}
-              {loggedTime && <span className="font-normal text-green-600 ml-1">at {loggedTime}</span>}
+              <span className="font-normal text-green-600 ml-1">at {loggedTime}</span>
             </span>
           </div>
         ) : (
@@ -191,7 +200,7 @@ function ChildActions({
         )}
 
         {/* Exception — secondary link */}
-        {!isTransported && (
+        {!isDone && (
           <Dialog open={excOpen} onOpenChange={setExcOpen}>
             <DialogTrigger asChild>
               <button

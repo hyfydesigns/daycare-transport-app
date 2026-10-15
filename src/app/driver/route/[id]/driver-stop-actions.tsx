@@ -23,15 +23,21 @@ export function DriverStopActions({
   date,
   currentStatus,
   stopType,
+  actualPickupTime,
+  actualDropoffTime,
 }: {
   childId: string;
   childName: string;
   date: string;
   currentStatus: string;
   stopType: "PICKUP" | "DROPOFF";
+  actualPickupTime?: string | null;
+  actualDropoffTime?: string | null;
 }) {
   const [status, setStatus] = useState(currentStatus);
-  const [loggedTime, setLoggedTime] = useState<string | null>(null);
+  const [loggedTime, setLoggedTime] = useState<string | null>(
+    stopType === "PICKUP" ? (actualPickupTime ?? null) : (actualDropoffTime ?? null)
+  );
   const [open, setOpen] = useState(false);
   const [excStatus, setExcStatus] = useState("ABSENT");
   const [notes, setNotes] = useState("");
@@ -40,7 +46,8 @@ export function DriverStopActions({
 
   const now = () => new Date().toTimeString().slice(0, 5);
 
-  const isTransported = status === "TRANSPORTED";
+  // Done = the specific time for this stop type is logged
+  const isDone = !!loggedTime;
   const hasException = status !== "TRANSPORTED" && status !== "";
 
   async function markTransported() {
@@ -76,7 +83,7 @@ export function DriverStopActions({
     router.refresh();
   }
 
-  if (isTransported) {
+  if (isDone) {
     return (
       <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 rounded-xl py-3 mt-3">
         <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
@@ -88,7 +95,7 @@ export function DriverStopActions({
     );
   }
 
-  if (hasException) {
+  if (!isDone && hasException) {
     return (
       <div className="flex items-center justify-center gap-2 bg-orange-50 border border-orange-200 rounded-xl py-3 mt-3">
         <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" />

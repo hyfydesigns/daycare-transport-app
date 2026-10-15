@@ -127,6 +127,8 @@ export default async function SchoolRunPage({
             ? {
                 status: exceptionMap.get(c.id)!.status,
                 dropoffLocation: exceptionMap.get(c.id)!.dropoffLocation ?? null,
+                actualPickupTime: exceptionMap.get(c.id)!.actualPickupTime ?? null,
+                actualDropoffTime: exceptionMap.get(c.id)!.actualDropoffTime ?? null,
               }
             : null,
         }))}

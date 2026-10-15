@@ -180,6 +180,8 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
                               date={today}
                               currentStatus={log?.status ?? ""}
                               stopType={stop.type as "PICKUP" | "DROPOFF"}
+                              actualPickupTime={log?.actualPickupTime}
+                              actualDropoffTime={log?.actualDropoffTime}
                             />
                           </div>
                         );
