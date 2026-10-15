@@ -148,45 +148,39 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
                     <div className="mt-3 space-y-2">
                       {stopChildren.map((child) => {
                         const log = exceptionMap.get(child.id);
-                        // Exclude "" status (dropoff-preference-only log) from exception badge
                         const hasException = log && log.status !== "TRANSPORTED" && log.status !== "";
                         const effectiveDropoff = log?.dropoffLocation ?? child.defaultDropoff ?? "HOME";
                         return (
-                          <div key={child.id} className="bg-muted/50 rounded-lg p-3">
-                            <div className="flex items-start justify-between gap-2">
-                              <div className="min-w-0 flex-1">
-                                <p className="font-medium text-sm">{child.fullName}</p>
-                                {child.specialInstructions && (
-                                  <div className="flex items-center gap-1 text-xs text-orange-600 mt-0.5">
-                                    <AlertCircle className="h-3 w-3 shrink-0" />
-                                    <span className="truncate">{child.specialInstructions}</span>
-                                  </div>
-                                )}
-                                {hasException && (
-                                  <Badge variant="warning" className="text-xs mt-1">
-                                    {ATTENDANCE_LABELS[log.status]}
-                                  </Badge>
-                                )}
-                                {/* Drop-off destination toggle — only on DROPOFF stops */}
-                                {stop.type === "DROPOFF" && (
-                                  <DropoffToggle
-                                    childId={child.id}
-                                    date={today}
-                                    effectiveDropoff={effectiveDropoff}
-                                    orgName={orgName}
-                                    orgAddress={orgAddress}
-                                    homeAddress={child.homeAddress}
-                                  />
-                                )}
+                          <div key={child.id} className="bg-muted/50 rounded-xl p-3">
+                            <p className="font-semibold text-sm">{child.fullName}</p>
+                            {child.specialInstructions && (
+                              <div className="flex items-center gap-1 text-xs text-orange-600 mt-0.5">
+                                <AlertCircle className="h-3 w-3 shrink-0" />
+                                <span>{child.specialInstructions}</span>
                               </div>
-                              <DriverStopActions
+                            )}
+                            {hasException && (
+                              <Badge variant="warning" className="text-xs mt-1">
+                                {ATTENDANCE_LABELS[log.status]}
+                              </Badge>
+                            )}
+                            {stop.type === "DROPOFF" && (
+                              <DropoffToggle
                                 childId={child.id}
-                                childName={child.fullName.split(" ")[0]}
                                 date={today}
-                                currentStatus={log?.status ?? ""}
-                                stopType={stop.type as "PICKUP" | "DROPOFF"}
+                                effectiveDropoff={effectiveDropoff}
+                                orgName={orgName}
+                                orgAddress={orgAddress}
+                                homeAddress={child.homeAddress}
                               />
-                            </div>
+                            )}
+                            <DriverStopActions
+                              childId={child.id}
+                              childName={child.fullName.split(" ")[0]}
+                              date={today}
+                              currentStatus={log?.status ?? ""}
+                              stopType={stop.type as "PICKUP" | "DROPOFF"}
+                            />
                           </div>
                         );
                       })}

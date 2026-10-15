@@ -2,19 +2,19 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { ATTENDANCE_LABELS } from "@/lib/utils";
-import { CheckCircle, AlertTriangle, ChevronDown } from "lucide-react";
+import { CheckCircle, AlertCircle, ArrowUpFromLine, ArrowDownToLine, Loader2 } from "lucide-react";
 
 const EXCEPTION_STATUSES = [
-  { value: "TRANSPORTED", label: "Transported ✓", color: "text-green-700" },
-  { value: "PARENT_PICKUP_EARLY", label: "Parent Pickup", color: "text-blue-700" },
-  { value: "ABSENT", label: "Absent", color: "text-red-700" },
-  { value: "SICK", label: "Sick", color: "text-orange-700" },
-  { value: "NO_SCHOOL", label: "No School", color: "text-gray-600" },
-  { value: "OTHER", label: "Other", color: "text-gray-700" },
+  { value: "PARENT_PICKUP_EARLY", label: "Parent Pickup Early", color: "text-blue-700" },
+  { value: "ABSENT",              label: "Absent",              color: "text-red-700"  },
+  { value: "SICK",                label: "Sick",                color: "text-orange-700" },
+  { value: "NO_SCHOOL",           label: "No School",           color: "text-gray-600" },
+  { value: "OTHER",               label: "Other",               color: "text-gray-700" },
 ];
 
 export function DriverStopActions({
@@ -30,18 +30,22 @@ export function DriverStopActions({
   currentStatus: string;
   stopType: "PICKUP" | "DROPOFF";
 }) {
-  const [open, setOpen] = useState(false);
   const [status, setStatus] = useState(currentStatus);
+  const [loggedTime, setLoggedTime] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
+  const [excStatus, setExcStatus] = useState("ABSENT");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
 
   const now = () => new Date().toTimeString().slice(0, 5);
 
+  const isTransported = status === "TRANSPORTED";
+  const hasException = status !== "TRANSPORTED" && status !== "";
+
   async function markTransported() {
     setLoading(true);
-    const pickupTime = stopType === "PICKUP" ? now() : undefined;
-    const dropoffTime = stopType === "DROPOFF" ? now() : undefined;
+    const time = now();
     await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -49,10 +53,12 @@ export function DriverStopActions({
         childId,
         date,
         status: "TRANSPORTED",
-        actualPickupTime: pickupTime,
-        actualDropoffTime: dropoffTime,
+        ...(stopType === "PICKUP"  ? { actualPickupTime:  time } : {}),
+        ...(stopType === "DROPOFF" ? { actualDropoffTime: time } : {}),
       }),
     });
+    setLoggedTime(time);
+    setStatus("TRANSPORTED");
     setLoading(false);
     router.refresh();
   }
@@ -62,44 +68,71 @@ export function DriverStopActions({
     await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ childId, date, status, notes }),
+      body: JSON.stringify({ childId, date, status: excStatus, notes }),
     });
+    setStatus(excStatus);
     setLoading(false);
     setOpen(false);
     router.refresh();
   }
 
-  const isTransported = currentStatus === "TRANSPORTED";
+  if (isTransported) {
+    return (
+      <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 rounded-xl py-3 mt-3">
+        <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+        <span className="text-sm font-semibold text-green-700">
+          {stopType === "PICKUP" ? "Picked up" : "Dropped off"}
+          {loggedTime && <span className="font-normal text-green-600 ml-1">at {loggedTime}</span>}
+        </span>
+      </div>
+    );
+  }
+
+  if (hasException) {
+    return (
+      <div className="flex items-center justify-center gap-2 bg-orange-50 border border-orange-200 rounded-xl py-3 mt-3">
+        <AlertCircle className="h-4 w-4 text-orange-500 shrink-0" />
+        <Badge variant="warning" className="text-xs">{ATTENDANCE_LABELS[status] ?? status}</Badge>
+      </div>
+    );
+  }
 
   return (
-    <div className="flex items-center gap-2 shrink-0">
-      {isTransported ? (
-        <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-          <CheckCircle className="h-4 w-4" />
-          {stopType === "PICKUP" ? "Picked up" : "Dropped off"}
-        </span>
-      ) : (
-        <Button
-          size="sm"
-          variant="outline"
-          className="text-xs h-8"
-          onClick={markTransported}
-          disabled={loading}
-        >
-          <CheckCircle className="h-3.5 w-3.5 mr-1 text-green-600" />
-          {stopType === "PICKUP" ? "Pick Up" : "Drop Off"}
-        </Button>
-      )}
+    <div className="mt-3 space-y-2">
+      {/* Primary action — large tap target */}
+      <button
+        type="button"
+        onClick={markTransported}
+        disabled={loading}
+        className={`w-full flex items-center justify-center gap-2 rounded-xl py-4 text-base font-semibold transition-colors active:scale-[0.98] disabled:opacity-60 ${
+          stopType === "PICKUP"
+            ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white"
+            : "bg-green-600 hover:bg-green-700 active:bg-green-800 text-white"
+        }`}
+      >
+        {loading ? (
+          <Loader2 className="h-5 w-5 animate-spin" />
+        ) : stopType === "PICKUP" ? (
+          <><ArrowUpFromLine className="h-5 w-5" /> Picked Up</>
+        ) : (
+          <><ArrowDownToLine className="h-5 w-5" /> Dropped Off</>
+        )}
+      </button>
 
+      {/* Exception — secondary link */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button size="sm" variant="ghost" className="h-8 px-2">
-            <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
-          </Button>
+          <button
+            type="button"
+            className="w-full text-center text-xs text-muted-foreground hover:text-orange-600 py-1 transition-colors"
+          >
+            <AlertCircle className="h-3 w-3 inline mr-1" />
+            Mark as exception
+          </button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
-            <DialogTitle>Exception for {childName}</DialogTitle>
+            <DialogTitle>Exception — {childName}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="grid gap-1.5">
@@ -107,26 +140,26 @@ export function DriverStopActions({
                 <button
                   key={s.value}
                   type="button"
-                  onClick={() => setStatus(s.value)}
-                  className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border text-left transition-colors ${
-                    status === s.value ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted"
+                  onClick={() => setExcStatus(s.value)}
+                  className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium border text-left transition-colors ${
+                    excStatus === s.value ? "border-primary bg-primary/5" : "border-transparent hover:bg-muted"
                   }`}
                 >
-                  <span className={`text-sm ${s.color}`}>{s.label}</span>
+                  <span className={s.color}>{s.label}</span>
                 </button>
               ))}
             </div>
             <div className="space-y-2">
-              <Label className="text-sm">Notes</Label>
+              <Label className="text-sm">Notes (optional)</Label>
               <Textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                placeholder="Optional notes…"
+                placeholder="Add a note…"
                 rows={2}
                 className="text-sm"
               />
             </div>
-            <Button className="w-full" onClick={saveException} disabled={loading}>
+            <Button className="w-full h-12 text-base" onClick={saveException} disabled={loading}>
               {loading ? "Saving…" : "Save"}
             </Button>
           </div>

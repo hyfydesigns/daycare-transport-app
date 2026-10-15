@@ -5,11 +5,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import {
-  AlertCircle, CheckCircle, AlertTriangle,
-  ArrowUpFromLine, ArrowDownToLine, Home, Building2, ArrowRightLeft,
+  AlertCircle, CheckCircle,
+  ArrowUpFromLine, ArrowDownToLine, Home, Building2, ArrowRightLeft, Loader2,
 } from "lucide-react";
 
 interface ChildRow {
@@ -84,11 +85,12 @@ function ChildActions({
   const now = () => new Date().toTimeString().slice(0, 5);
   const router = useRouter();
   const [status, setStatus] = useState(child.log?.status ?? "");
+  const [loggedTime, setLoggedTime] = useState<string | null>(null);
   const [dropoffLoc, setDropoffLoc] = useState(
     child.log?.dropoffLocation ?? child.defaultDropoff ?? "HOME"
   );
   const [excOpen, setExcOpen] = useState(false);
-  const [excStatus, setExcStatus] = useState(status);
+  const [excStatus, setExcStatus] = useState("ABSENT");
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -97,6 +99,7 @@ function ChildActions({
 
   async function markTransported() {
     setLoading(true);
+    const time = now();
     await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -104,10 +107,11 @@ function ChildActions({
         childId: child.id,
         date,
         status: "TRANSPORTED",
-        ...(runType === "PICKUP"  ? { actualPickupTime:  now() } : {}),
-        ...(runType === "DROPOFF" ? { actualDropoffTime: now() } : {}),
+        ...(runType === "PICKUP"  ? { actualPickupTime:  time } : {}),
+        ...(runType === "DROPOFF" ? { actualDropoffTime: time } : {}),
       }),
     });
+    setLoggedTime(time);
     setStatus("TRANSPORTED");
     setLoading(false);
     router.refresh();
@@ -127,67 +131,80 @@ function ChildActions({
   }
 
   return (
-    <div className="bg-muted/50 rounded-lg p-3">
-      <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <p className="font-medium text-sm">{child.fullName}</p>
+    <div className="bg-muted/50 rounded-xl p-3">
+      <p className="font-semibold text-sm">{child.fullName}</p>
 
-          {child.specialInstructions && (
-            <div className="flex items-center gap-1 text-xs text-orange-600 mt-0.5">
-              <AlertCircle className="h-3 w-3 shrink-0" />
-              <span className="truncate">{child.specialInstructions}</span>
-            </div>
-          )}
-
-          {hasException && (
-            <Badge variant="warning" className="text-xs mt-1">
-              {attendanceLabels[status] ?? status}
-            </Badge>
-          )}
-
-          {/* Drop-off destination toggle — only when dropping off */}
-          {runType === "DROPOFF" && (
-            <DropoffToggle
-              childId={child.id}
-              date={date}
-              location={dropoffLoc}
-              orgName={orgName}
-              orgAddress={orgAddress}
-              homeAddress={child.homeAddress}
-              onChange={setDropoffLoc}
-            />
-          )}
+      {child.specialInstructions && (
+        <div className="flex items-center gap-1 text-xs text-orange-600 mt-0.5">
+          <AlertCircle className="h-3 w-3 shrink-0" />
+          <span>{child.specialInstructions}</span>
         </div>
+      )}
 
-        {/* Action buttons */}
-        <div className="flex items-center gap-2 shrink-0">
-          {isTransported ? (
-            <span className="flex items-center gap-1 text-xs text-green-600 font-medium">
-              <CheckCircle className="h-4 w-4" />
+      {hasException && (
+        <Badge variant="warning" className="text-xs mt-1">
+          {attendanceLabels[status] ?? status}
+        </Badge>
+      )}
+
+      {runType === "DROPOFF" && (
+        <DropoffToggle
+          childId={child.id}
+          date={date}
+          location={dropoffLoc}
+          orgName={orgName}
+          orgAddress={orgAddress}
+          homeAddress={child.homeAddress}
+          onChange={setDropoffLoc}
+        />
+      )}
+
+      {/* Primary action */}
+      <div className="mt-3 space-y-2">
+        {isTransported ? (
+          <div className="flex items-center justify-center gap-2 bg-green-50 border border-green-200 rounded-xl py-3">
+            <CheckCircle className="h-5 w-5 text-green-600 shrink-0" />
+            <span className="text-sm font-semibold text-green-700">
               {runType === "PICKUP" ? "Picked up" : "Dropped off"}
+              {loggedTime && <span className="font-normal text-green-600 ml-1">at {loggedTime}</span>}
             </span>
-          ) : (
-            <Button
-              size="sm"
-              variant="outline"
-              className="text-xs h-8"
-              onClick={markTransported}
-              disabled={loading}
-            >
-              <CheckCircle className="h-3.5 w-3.5 mr-1 text-green-600" />
-              {runType === "PICKUP" ? "Pick Up" : "Drop Off"}
-            </Button>
-          )}
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={markTransported}
+            disabled={loading}
+            className={`w-full flex items-center justify-center gap-2 rounded-xl py-4 text-base font-semibold transition-colors active:scale-[0.98] disabled:opacity-60 ${
+              runType === "PICKUP"
+                ? "bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white"
+                : "bg-green-600 hover:bg-green-700 active:bg-green-800 text-white"
+            }`}
+          >
+            {loading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : runType === "PICKUP" ? (
+              <><ArrowUpFromLine className="h-5 w-5" /> Picked Up</>
+            ) : (
+              <><ArrowDownToLine className="h-5 w-5" /> Dropped Off</>
+            )}
+          </button>
+        )}
 
+        {/* Exception — secondary link */}
+        {!isTransported && (
           <Dialog open={excOpen} onOpenChange={setExcOpen}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="ghost" className="h-8 px-2">
-                <AlertTriangle className="h-3.5 w-3.5 text-orange-500" />
-              </Button>
+              <button
+                type="button"
+                className="w-full text-center text-xs text-muted-foreground hover:text-orange-600 py-1 transition-colors"
+              >
+                <AlertCircle className="h-3 w-3 inline mr-1" />
+                Mark as exception
+              </button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-sm">
               <DialogHeader>
-                <DialogTitle>Exception for {child.fullName.split(" ")[0]}</DialogTitle>
+                <DialogTitle>Exception — {child.fullName.split(" ")[0]}</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div className="grid gap-1.5">
@@ -196,7 +213,7 @@ function ChildActions({
                       key={s.value}
                       type="button"
                       onClick={() => setExcStatus(s.value)}
-                      className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium border text-left transition-colors ${
+                      className={`flex items-center gap-2 px-3 py-3 rounded-lg text-sm font-medium border text-left transition-colors ${
                         excStatus === s.value
                           ? "border-primary bg-primary/5"
                           : "border-transparent hover:bg-muted"
@@ -207,22 +224,22 @@ function ChildActions({
                   ))}
                 </div>
                 <div className="space-y-2">
-                  <Label className="text-sm">Notes</Label>
+                  <Label className="text-sm">Notes (optional)</Label>
                   <Textarea
                     value={notes}
                     onChange={(e) => setNotes(e.target.value)}
-                    placeholder="Optional notes…"
+                    placeholder="Add a note…"
                     rows={2}
                     className="text-sm"
                   />
                 </div>
-                <Button className="w-full" onClick={saveException} disabled={loading}>
+                <Button className="w-full h-12 text-base" onClick={saveException} disabled={loading}>
                   {loading ? "Saving…" : "Save"}
                 </Button>
               </div>
             </DialogContent>
           </Dialog>
-        </div>
+        )}
       </div>
     </div>
   );
