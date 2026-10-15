@@ -182,6 +182,7 @@ export default async function DriverRoutePage({ params }: { params: Promise<{ id
                               stopType={stop.type as "PICKUP" | "DROPOFF"}
                               actualPickupTime={log?.actualPickupTime}
                               actualDropoffTime={log?.actualDropoffTime}
+                              isOnRun={isOnRun}
                             />
                           </div>
                         );

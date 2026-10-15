@@ -117,6 +117,7 @@ export default async function SchoolRunPage({
 
       {/* Interactive child list — client component handles run-type toggle */}
       <SchoolRunView
+        isOnRun={driver.isOnRun}
         children={children.map((c) => ({
           id: c.id,
           fullName: c.fullName,

@@ -25,6 +25,7 @@ export function DriverStopActions({
   stopType,
   actualPickupTime,
   actualDropoffTime,
+  isOnRun,
 }: {
   childId: string;
   childName: string;
@@ -33,6 +34,7 @@ export function DriverStopActions({
   stopType: "PICKUP" | "DROPOFF";
   actualPickupTime?: string | null;
   actualDropoffTime?: string | null;
+  isOnRun: boolean;
 }) {
   const [status, setStatus] = useState(currentStatus);
   const [loggedTime, setLoggedTime] = useState<string | null>(
@@ -53,6 +55,13 @@ export function DriverStopActions({
   async function markTransported() {
     setLoading(true);
     const time = now();
+    if (!isOnRun) {
+      await fetch("/api/driver/run", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isOnRun: true }),
+      });
+    }
     await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },

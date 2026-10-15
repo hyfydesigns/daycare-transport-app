@@ -81,11 +81,12 @@ function DropoffToggle({
 
 // ── Per-child action buttons ──────────────────────────────────────────────────
 function ChildActions({
-  child, date, runType, orgName, orgAddress, attendanceLabels,
+  child, date, runType, orgName, orgAddress, attendanceLabels, isOnRun,
 }: {
   child: ChildRow; date: string; runType: "PICKUP" | "DROPOFF";
   orgName: string; orgAddress: string;
   attendanceLabels: Record<string, string>;
+  isOnRun: boolean;
 }) {
   const now = () => new Date().toTimeString().slice(0, 5);
   const router = useRouter();
@@ -107,6 +108,13 @@ function ChildActions({
   async function markTransported() {
     setLoading(true);
     const time = now();
+    if (!isOnRun) {
+      await fetch("/api/driver/run", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isOnRun: true }),
+      });
+    }
     await fetch("/api/attendance", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -260,12 +268,14 @@ export function SchoolRunView({
   orgName,
   orgAddress,
   attendanceLabels,
+  isOnRun,
 }: {
   children: ChildRow[];
   date: string;
   orgName: string;
   orgAddress: string;
   attendanceLabels: Record<string, string>;
+  isOnRun: boolean;
 }) {
   const [runType, setRunType] = useState<"PICKUP" | "DROPOFF">("PICKUP");
 
@@ -315,6 +325,7 @@ export function SchoolRunView({
               orgName={orgName}
               orgAddress={orgAddress}
               attendanceLabels={attendanceLabels}
+              isOnRun={isOnRun}
             />
           ))}
         </div>
