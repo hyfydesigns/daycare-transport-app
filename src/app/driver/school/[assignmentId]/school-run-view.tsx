@@ -90,11 +90,9 @@ function ChildActions({
   const now = () => new Date().toTimeString().slice(0, 5);
   const router = useRouter();
   const [status, setStatus] = useState(child.log?.status ?? "");
-  const [loggedTime, setLoggedTime] = useState<string | null>(
-    runType === "PICKUP"
-      ? (child.log?.actualPickupTime ?? null)
-      : (child.log?.actualDropoffTime ?? null)
-  );
+  const [pickupTime, setPickupTime] = useState<string | null>(child.log?.actualPickupTime ?? null);
+  const [dropoffTime, setDropoffTime] = useState<string | null>(child.log?.actualDropoffTime ?? null);
+  const loggedTime = runType === "PICKUP" ? pickupTime : dropoffTime;
   const [dropoffLoc, setDropoffLoc] = useState(
     child.log?.dropoffLocation ?? child.defaultDropoff ?? "HOME"
   );
@@ -120,7 +118,8 @@ function ChildActions({
         ...(runType === "DROPOFF" ? { actualDropoffTime: time } : {}),
       }),
     });
-    setLoggedTime(time);
+    if (runType === "PICKUP") setPickupTime(time);
+    else setDropoffTime(time);
     setStatus("TRANSPORTED");
     setLoading(false);
     router.refresh();
