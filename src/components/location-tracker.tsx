@@ -13,7 +13,31 @@ export function LocationTracker({ isOnRun }: { isOnRun: boolean }) {
   const [stopping, setStopping] = useState(false);
   const lastSentRef = useRef<number>(0);
   const watchIdRef = useRef<number | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinel | null>(null);
   const router = useRouter();
+
+  // Keep screen awake while on a run
+  useEffect(() => {
+    if (!isOnRun) return;
+    if (!("wakeLock" in navigator)) return;
+
+    async function acquireWakeLock() {
+      try {
+        wakeLockRef.current = await (navigator as Navigator & { wakeLock: { request: (type: string) => Promise<WakeLockSentinel> } }).wakeLock.request("screen");
+        // Re-acquire if the lock is released (e.g. tab backgrounded then foregrounded)
+        wakeLockRef.current.addEventListener("release", acquireWakeLock);
+      } catch {
+        // Not critical — silently ignore if denied
+      }
+    }
+
+    acquireWakeLock();
+
+    return () => {
+      wakeLockRef.current?.release();
+      wakeLockRef.current = null;
+    };
+  }, [isOnRun]);
 
   useEffect(() => {
     // Only track while driver is on a run
